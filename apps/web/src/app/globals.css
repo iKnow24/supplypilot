@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+/*
+ * SupplyPilot design tokens. Calm, warm neutrals; one restrained green accent
+ * ("fresh market"); amber for warnings; red only for real problems.
+ * Every text/background pair here meets WCAG AA contrast.
+ * Token names follow shadcn/ui so `npx shadcn add <component>` drops in cleanly.
+ */
+:root {
+  --radius: 0.75rem;
+  --background: oklch(0.985 0.004 85);
+  --foreground: oklch(0.2 0.012 260);
+  --card: oklch(1 0 0);
+  --card-foreground: var(--foreground);
+  --popover: oklch(1 0 0);
+  --popover-foreground: var(--foreground);
+  --primary: oklch(0.42 0.085 165);
+  --primary-foreground: oklch(0.99 0.005 165);
+  --secondary: oklch(0.955 0.006 85);
+  --secondary-foreground: var(--foreground);
+  --muted: oklch(0.955 0.006 85);
+  --muted-foreground: oklch(0.47 0.012 260);
+  --accent: oklch(0.95 0.025 165);
+  --accent-foreground: oklch(0.32 0.07 165);
+  --border: oklch(0.905 0.006 85);
+  --input: oklch(0.88 0.006 85);
+  --ring: oklch(0.55 0.1 165);
+  --success: oklch(0.42 0.085 165);
+  --success-soft: oklch(0.95 0.03 165);
+  --warning: oklch(0.47 0.11 65);
+  --warning-soft: oklch(0.96 0.045 85);
+  --destructive: oklch(0.5 0.17 27);
+  --destructive-soft: oklch(0.96 0.025 27);
+}
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-destructive: var(--destructive);
+  --color-destructive-soft: var(--destructive-soft);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "cv11", "ss01";
+  }
+  :focus-visible {
+    @apply outline-ring outline-2 outline-offset-2;
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
