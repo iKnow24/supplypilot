@@ -19,9 +19,17 @@ before either side depends on the change.
 | Method | Path | Status |
 | --- | --- | --- |
 | GET | `/v1/health` | Done (M1) |
-| POST | `/v1/optimize` | M3 |
+| POST | `/v1/optimize` | Done (M3) |
 
-Draft `POST /v1/optimize` request (to be finalized at the start of M3):
+The source of truth is the Pydantic models in
+`services/optimizer/src/supplypilot_optimizer/models.py`. From them:
+
+- `docs/openapi.json` is generated (`make api-types`), and
+- `apps/web/src/lib/optimizer/api-types.ts` is generated from that with `openapi-typescript`.
+
+CI fails if either is stale, so change the models, run `make api-types`, commit all three.
+
+### `POST /v1/optimize` request
 
 ```json
 {
@@ -30,13 +38,41 @@ Draft `POST /v1/optimize` request (to be finalized at the start of M3):
   "delivery_date": "2026-11-10",
   "lines": [{ "product_id": "prd_flour_ap_unbl", "quantity": "250", "unit": "lb" }],
   "preferences": { "excluded_supplier_ids": [], "preferred_supplier_ids": [], "allow_equivalences": true },
-  "baseline": { "saved_list_id": "lst_sundaycrumb_weekly" }
+  "baseline": { "lines": [{ "product_id": "prd_flour_ap_unbl", "supplier_id": "sup_bramblewood" }] }
 }
 ```
 
-Response: `status` (`optimal` | `infeasible`), `recommendation` (suppliers -> lines with packs,
-pack price, line total, overbuy; per-supplier subtotal, fee, minimum check), `alternatives[]`,
-`baseline` (or `null` with a reason), `excluded_offers[]` with reasons, `explanations[]`.
+- `baseline` is the buyer's habit: the supplier each line usually comes from (the cart's
+  `current_supplier_id`). It changed from the draft's `saved_list_id` because carts now live in
+  Postgres (M2), not the catalog. Omit it, and the response has no baseline and no savings.
+- Unknown ids or a unit that can't measure the product -> **422** with a message.
+  A basket that can't be filled -> **200** with `status: "infeasible"` and `problems`.
 
-Once the Pydantic models exist, the frontend generates TS types from FastAPI's OpenAPI schema
-(`openapi-typescript`), so nobody hand-copies response types.
+### Response (abridged)
+
+| Field | Meaning |
+| --- | --- |
+| `status` | `optimal` or `infeasible` |
+| `recommendation` | Lowest total delivered cost: `total_cents = items_subtotal_cents + fees_cents`; per supplier: allocations (offer, packs, pack price, `price_basis`), subtotal, fee charged or waived, minimum, order-by cutoff; per line: purchased and overbuy quantity in the requested unit |
+| `alternatives[]` | `fewest_suppliers`, `preferred_suppliers`, `lowest_item_subtotal`, each with `delta_cents` vs the recommendation and a plain-English `tradeoff`. Only included when different from the recommendation |
+| `baseline` | `priced` with a plan, or `unavailable` with a `reason` |
+| `savings_cents` | Baseline total minus recommendation total; `null` unless the baseline was priced |
+| `explanations[]` | Plain-English rationale (why the cheapest per-item supplier lost, fees waived, splits, overbuy, flagged data) |
+| `problems[]` | When infeasible: per line (`no_eligible_offer`, `insufficient_stock`, `only_below_minimum`, `not_sold`), per supplier (`minimum_unreachable`), or `order` |
+| `excluded_offers[]` | Every relevant offer that couldn't be used, with all its reasons |
+| `data` | Dataset, `synthetic`, label, and the `as_of` time used for cutoffs and freshness |
+
+### Pricing and model rules (what the optimizer promises)
+
+- Per-pack price = the **lowest** of the buyer's contract price, the list price, and any volume
+  tier the pack count reaches (all-units tiers). A tier never beats a lower contract.
+- Whole packs only. An offer is unused or bought at least `min_packs` times.
+- Never more packs than the line needs (rounded up to whole packs), except to reach a volume tier
+  that makes the line cheaper. **We never pad an order just to reach a supplier minimum.**
+- A supplier used at all must reach its minimum order (item subtotal). Its delivery fee is charged
+  unless the item subtotal reaches its free-delivery threshold.
+- Excluded, never guessed: stale prices or stock, missing stock counts, unreviewed product
+  mappings, out of stock, wrong zone/day, passed cutoff, suppliers the buyer excluded, and
+  equivalent products the buyer hasn't approved.
+- Ties on total are broken by fewer suppliers, then fewer non-preferred suppliers, then fewer
+  packs, then a fixed offer order: the same request always gets the same answer.

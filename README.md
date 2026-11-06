@@ -11,9 +11,9 @@ distributors (prices, packs, stock, fees, minimums, delivery days) and explains 
 
 ## Status
 
-Milestone 1 (foundation) is done. See [`docs/implementation-checklist.md`](docs/implementation-checklist.md).
-The price optimizer lands in Milestone 3; until then "Find My Best Price" is disabled
-rather than faked.
+Milestones 1 (foundation) and 3 (optimizer service, `POST /v1/optimize`) are done; see
+[`docs/implementation-checklist.md`](docs/implementation-checklist.md). The web app isn't wired to
+the optimizer yet (Milestone 4), so "Find My Best Price" stays disabled rather than faked.
 
 ## Run it locally
 
@@ -40,6 +40,7 @@ In M1 the web app reads the seed catalog directly, so it works without the optim
 make check      # lint + typecheck + format + all tests (same as CI)
 make test       # just tests
 make seed       # regenerate data/seed/demo_catalog.json after editing generate_seed.py
+make api-types  # regenerate docs/openapi.json + web TS types after changing optimizer models
 ```
 
 ## Repo map

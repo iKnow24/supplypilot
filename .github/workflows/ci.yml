@@ -35,3 +35,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: python3 data/seed/generate_seed.py && git diff --exit-code data/seed/demo_catalog.json
+
+  # docs/openapi.json and the web app's generated TS types must match the optimizer's models.
+  api-contract-is-current:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: apps/web/package-lock.json }
+      - run: uv sync
+        working-directory: services/optimizer
+      - run: npm ci
+        working-directory: apps/web
+      - run: make api-types && git diff --exit-code docs/openapi.json apps/web/src/lib/optimizer/api-types.ts
