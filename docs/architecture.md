@@ -77,13 +77,21 @@ authoritatively in Python in M3 (with the same test cases).
   why nothing can be saved. We never pretend in-memory data persists.
 - The web app only ever uses the publishable key; the service-role key is not used anywhere.
 
-## Request flow (from M3/M4)
+## Request flow ("Find My Best Price", M4)
 
 ```
-Browser -> Next.js server action -> POST {OPTIMIZER_URL}/v1/optimize (typed JSON)
-                                  <- recommendation + alternatives + line-level explanations
+Browser -> server action findBestPrice()
+             reads the cart from Postgres (RLS), checks lines + bookable date
+             -> POST {OPTIMIZER_URL}/v1/optimize   (typed: api-types.ts, generated)
+             <- optimal | partial | infeasible + alternatives + explanations
+             -> insert optimization_runs (request + full response, append-only)
+        <- redirect to /results/{run id}, rendered from the stored run
 ```
-The browser never calls the optimizer directly, and never sees other buyers' prices.
+- The browser never calls the optimizer and never sends the basket: the server builds the request
+  from the database, so a tampered form can't price someone else's cart.
+- A run stores the exact response, so a past result reads the same after prices or the cart change.
+- Optimizer down, slow (20 s timeout) or rejecting the request -> a plain error toast; nothing is
+  stored. Partial and infeasible answers are stored: "why can't I get this?" is worth keeping.
 
 ## Extension points (designed, not built)
 

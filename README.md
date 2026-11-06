@@ -11,10 +11,10 @@ distributors (prices, packs, stock, fees, minimums, delivery days) and explains 
 
 ## Status
 
-Milestones 1 (foundation), 2 (shopping workflow: persistent cart, saved lists, CSV upload,
-delivery date, supplier preferences) and 3 (optimizer service, `POST /v1/optimize`) are done; see
-[`docs/implementation-checklist.md`](docs/implementation-checklist.md). The web app isn't wired to
-the optimizer yet (Milestone 4), so "Find My Best Price" stays disabled rather than faked.
+Milestones 1–4 are done: foundation, shopping workflow (persistent cart, saved lists, CSV upload,
+delivery date, supplier preferences), the CP-SAT optimizer (`POST /v1/optimize`), and the
+recommendations UI ("Find My Best Price", results, alternatives, history). Next is M5, purchase
+orders. See [`docs/implementation-checklist.md`](docs/implementation-checklist.md).
 
 ## Run it locally
 
@@ -33,7 +33,9 @@ cd apps/web && npm run dev
 cd services/optimizer && uv run supplypilot-optimizer
 ```
 
-In M1 the web app reads the seed catalog directly, so it works without the optimizer running.
+The web app calls the optimizer server-to-server at `OPTIMIZER_URL` (default
+`http://127.0.0.1:8000`). Browsing works without it; "Find My Best Price" says plainly when it
+isn't reachable.
 
 ### Local database (Milestone 2+)
 

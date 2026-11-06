@@ -123,6 +123,62 @@ describe("row level security between buyers", () => {
   });
 });
 
+describe("optimization runs", () => {
+  const request = {
+    buyer_id: A,
+    zone: "ORL-UCF",
+    delivery_date: "2026-11-11",
+    lines: [{ product_id: "prd_milk_whole", quantity: "16", unit: "gal" }],
+  };
+  const response = { status: "optimal", recommendation: { total_cents: 13260, supplier_count: 1 } };
+
+  it("stores and reads back a run, only for its own org", async () => {
+    const repo = new SupabaseBuyerStateRepository(a, A);
+    // The repository only reads fields it needs from the response, so a stub is enough here.
+    const id = await repo.saveRun(request as never, response as never);
+    const run = await repo.getRun(id);
+    expect(run?.totalCents).toBe(13260);
+    expect(run?.request).toEqual(request);
+    expect((await repo.listRuns(5)).some((r) => r.id === id)).toBe(true);
+    // Another buyer can't see it, even by id.
+    expect(await new SupabaseBuyerStateRepository(b, B).getRun(id)).toBeNull();
+    const { data } = await b.from("optimization_runs").select("id").eq("id", id);
+    expect(data).toEqual([]);
+  });
+
+  it("is append-only for buyers and can't be written into another org", async () => {
+    const { data: mine } = await a.from("optimization_runs").select("id").limit(1);
+    const id = mine![0]!.id;
+    const upd = await a.from("optimization_runs").update({ total_cents: 1 }).eq("id", id);
+    expect(upd.error?.code).toBe("42501");
+    const del = await a.from("optimization_runs").delete().eq("id", id);
+    expect(del.error?.code).toBe("42501");
+    const foreign = await a.from("optimization_runs").insert({
+      org_id: B,
+      delivery_date: "2026-11-11",
+      status: "optimal",
+      total_cents: 1,
+      line_count: 1,
+      request: {},
+      response: {},
+    });
+    expect(foreign.error?.code).toBe("42501");
+  });
+
+  it("rejects a total on an infeasible run", async () => {
+    const { error } = await a.from("optimization_runs").insert({
+      org_id: A,
+      delivery_date: "2026-11-11",
+      status: "infeasible",
+      total_cents: 100,
+      line_count: 1,
+      request: {},
+      response: {},
+    });
+    expect(error?.code).toBe("23514");
+  });
+});
+
 describe("SupabaseBuyerStateRepository", () => {
   it("round-trips a cart: replace, merge, update, remove, baseline", async () => {
     const repo = new SupabaseBuyerStateRepository(a, A);

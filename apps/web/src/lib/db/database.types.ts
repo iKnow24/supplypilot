@@ -149,6 +149,57 @@ export type Database = {
           },
         ];
       };
+      optimization_runs: {
+        Row: {
+          created_at: string;
+          delivery_date: string;
+          id: string;
+          line_count: number;
+          org_id: string;
+          request: NonNullable<Json>;
+          response: NonNullable<Json>;
+          savings_cents: number | null;
+          status: string;
+          supplier_count: number | null;
+          total_cents: number | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          delivery_date: string;
+          id?: string;
+          line_count: number;
+          org_id: string;
+          request: NonNullable<Json>;
+          response: NonNullable<Json>;
+          savings_cents?: number | null;
+          status: string;
+          supplier_count?: number | null;
+          total_cents?: number | null;
+        };
+        Update: {
+          created_at?: string;
+          delivery_date?: string;
+          id?: string;
+          line_count?: number;
+          org_id?: string;
+          request?: NonNullable<Json>;
+          response?: NonNullable<Json>;
+          savings_cents?: number | null;
+          status?: string;
+          supplier_count?: number | null;
+          total_cents?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "optimization_runs_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "buyer_orgs";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       org_members: {
         Row: {
           created_at: string;

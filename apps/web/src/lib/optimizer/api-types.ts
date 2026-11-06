@@ -186,7 +186,7 @@ export interface components {
     OptimizeResponse: {
       /** Alternatives */
       alternatives: components["schemas"]["Alternative"][];
-      /** @description Null when the request had no baseline */
+      /** @description Null when the request had no baseline. For a partial plan it covers the same filled lines. */
       baseline: components["schemas"]["Baseline"] | null;
       data: components["schemas"]["DataSource"];
       /** Delivery Date */
@@ -195,7 +195,10 @@ export interface components {
       excluded_offers: components["schemas"]["ExcludedOffer"][];
       /** Explanations */
       explanations: string[];
-      /** Problems */
+      /**
+       * Problems
+       * @description Why lines were left out (partial) or nothing could be filled
+       */
       problems: components["schemas"]["Problem"][];
       recommendation: components["schemas"]["Plan"] | null;
       /**
@@ -205,9 +208,10 @@ export interface components {
       savings_cents: number | null;
       /**
        * Status
+       * @description optimal: every line filled. partial: the best plan for the lines that can be filled; `problems` says why the others can't. infeasible: no line can be filled.
        * @enum {string}
        */
-      status: "optimal" | "infeasible";
+      status: "optimal" | "partial" | "infeasible";
       /** Zone */
       zone: string;
     };
@@ -272,7 +276,7 @@ export interface components {
     };
     /**
      * Problem
-     * @description Why no plan exists, at the most specific scope we can name.
+     * @description Why a line (or the whole order) can't be filled, at the most specific scope we can name.
      */
     Problem: {
       /** Code */

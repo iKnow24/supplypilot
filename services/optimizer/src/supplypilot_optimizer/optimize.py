@@ -435,9 +435,61 @@ def _dedupe(excluded: list[ExcludedOffer]) -> list[ExcludedOffer]:
     return sorted(seen.values(), key=lambda e: (e.product_id, e.supplier_id))
 
 
+def explain_skipped(
+    catalog: Catalog, request: OptimizeRequest, now: datetime, index: int, excluded: list[ExcludedOffer]
+) -> list[Problem]:
+    """Why one line was left out of a partial plan."""
+    single = request.model_copy(update={"lines": [request.lines[index]], "baseline": None})
+    ctx = Context(catalog, single)
+    elig = assess(catalog, single, now)
+    if solve(elig.candidates, elig.need_base) is None:
+        return explain_infeasible(ctx, elig, excluded)
+    return [
+        Problem(
+            scope="line",
+            product_id=request.lines[index].product_id,
+            code="conflicts_with_order",
+            message=f"{ctx.product_name(request.lines[index].product_id)} can be bought on its own, but not "
+            "together with the rest of this order without breaking a supplier's stock limit or minimum.",
+        )
+    ]
+
+
 def optimize(request: OptimizeRequest, catalog: Catalog | None = None, now: datetime | None = None) -> OptimizeResponse:
+    """Best plan for the whole basket; if some lines can't be filled, the best plan for the rest."""
     catalog = catalog or get_catalog()
     now = now or now_for(catalog)
+    elig = assess(catalog, request, now)
+    excluded = _dedupe(elig.excluded)
+    probe = solve(
+        elig.candidates,
+        elig.need_base,
+        mode="total",
+        preferred=frozenset(request.preferences.preferred_supplier_ids),
+        allow_skip=True,
+    )
+    if probe is None or not probe.skipped:
+        return _optimize_all(request, catalog, now)
+
+    filled = [line for i, line in enumerate(request.lines) if i not in probe.skipped]
+    result = _optimize_all(request.model_copy(update={"lines": filled}), catalog, now)
+    assert result.status == "optimal", "the filled lines were jointly feasible"
+    problems = [p for i in probe.skipped for p in explain_skipped(catalog, request, now, i, excluded)]
+    ctx = Context(catalog, request)
+    left_out = join([ctx.product_name(request.lines[i].product_id) for i in probe.skipped])
+    headline = f"Best price for {len(filled)} of {len(request.lines)} items. Left out: {left_out} (see why below)."
+    return result.model_copy(
+        update={
+            "status": "partial",
+            "problems": problems,
+            "explanations": [headline, *result.explanations],
+            "excluded_offers": excluded,
+        }
+    )
+
+
+def _optimize_all(request: OptimizeRequest, catalog: Catalog, now: datetime) -> OptimizeResponse:
+    """Best plan that fills every line, or an infeasible answer with reasons."""
     ctx = Context(catalog, request)
     elig = assess(catalog, request, now)
     excluded = _dedupe(elig.excluded)
@@ -463,7 +515,6 @@ def optimize(request: OptimizeRequest, catalog: Catalog | None = None, now: date
             excluded_offers=excluded,
             data=data,
         )
-
     alts = alternatives(ctx, elig, best, preferred)
     explanations = explain(ctx, elig, best, alts, excluded)
     savings = None

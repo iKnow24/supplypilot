@@ -166,7 +166,7 @@ export function CsvImport({
 
           <div className="flex flex-wrap gap-2">
             <Button size="sm" disabled={!n || pending} onClick={() => submit("merge")}>
-              {cartHasLines ? `Add ${n} to cart` : `Import ${n} items`}
+              {cartHasLines ? `Add ${n} to cart` : `Import ${n} item${n === 1 ? "" : "s"}`}
             </Button>
             {cartHasLines ? (
               <Button
