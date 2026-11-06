@@ -1,4 +1,4 @@
-.PHONY: setup dev web optimizer test lint seed check
+.PHONY: setup dev web optimizer test lint seed check db-start db-stop db-reset db-status
 
 setup:            ## Install everything
 	cd apps/web && npm install
@@ -25,3 +25,18 @@ lint:
 	cd apps/web && npm run lint && npm run typecheck && npm run format:check
 
 check: lint test  ## Everything CI runs
+
+# Local Supabase (Postgres + Auth + REST) in Docker. Needs a running Docker engine (OrbStack).
+SUPABASE := apps/web/node_modules/.bin/supabase --workdir .
+
+db-start:         ## Start local Supabase; prints URLs and local keys
+	$(SUPABASE) start
+
+db-stop:          ## Stop it (data is kept in a Docker volume)
+	$(SUPABASE) stop
+
+db-reset:         ## Wipe local DB, re-run supabase/migrations + seed
+	$(SUPABASE) db reset
+
+db-status:        ## Show URLs and local keys again
+	$(SUPABASE) status

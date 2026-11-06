@@ -34,6 +34,22 @@ cd services/optimizer && uv run supplypilot-optimizer
 
 In M1 the web app reads the seed catalog directly, so it works without the optimizer running.
 
+### Local database (Milestone 2+)
+
+Prereq: a Docker engine. On macOS use [OrbStack](https://orbstack.dev) (`brew install --cask orbstack`,
+then open it once). The Supabase CLI is pinned as a devDependency of `apps/web`, so `make setup`
+installs it; no Homebrew formula needed.
+
+```bash
+make db-start   # Postgres :54322, API :54321, Mailpit (auth emails) :54324
+make db-reset   # wipe and re-apply supabase/migrations
+make db-stop
+```
+
+To keep the download small (~2 GB), `supabase/config.toml` turns off Studio, Storage, Realtime,
+Edge Functions and Analytics. Flip `enabled = true` under any of them if you need it. The keys that
+`make db-status` prints are the well-known local-only demo keys, not secrets.
+
 ## Checks
 
 ```bash
