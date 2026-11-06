@@ -53,6 +53,8 @@ jobs:
         run: python3 supabase/generate_seed_sql.py && git diff --exit-code supabase/seed.sql
       - name: Start local Supabase (applies migrations + seed)
         run: make db-start
+      - name: Database security invariants (RLS everywhere, nothing for anon)
+        run: make db-check
       - name: Generated DB types are current
         run: make db-types && git diff --exit-code apps/web/src/lib/db/database.types.ts
       - name: RLS + repository integration tests
@@ -83,3 +85,18 @@ jobs:
       - run: npm ci
         working-directory: apps/web
       - run: make api-types && git diff --exit-code docs/openapi.json apps/web/src/lib/optimizer/api-types.ts
+
+  # The optimizer's production image builds, starts, and enforces its API key.
+  optimizer-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -f services/optimizer/Dockerfile -t optimizer .
+      - name: Smoke test
+        run: |
+          docker run -d -p 8000:8000 -e OPTIMIZER_API_KEY=ci-key --name optimizer optimizer
+          for i in $(seq 1 30); do curl -sf localhost:8000/v1/health && break; sleep 1; done
+          curl -sf localhost:8000/v1/health
+          body='{"buyer_id":"org_thirdshift","zone":"ORL-UCF","delivery_date":"2026-11-11","lines":[{"product_id":"prd_milk_whole","quantity":"16","unit":"gal"}]}'
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST localhost:8000/v1/optimize -H 'content-type: application/json' -d "$body")" = 401
+          curl -sf -X POST localhost:8000/v1/optimize -H 'content-type: application/json' -H 'x-api-key: ci-key' -d "$body" | grep -q '"status":"optimal"'

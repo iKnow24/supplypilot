@@ -65,7 +65,7 @@ export function DeliveryDatePicker({
                 name="delivery-date"
                 value={o.date}
                 checked={checked}
-                disabled={none || pending}
+                disabled={none}
                 onChange={() => run(() => setDeliveryDate(o.date))}
                 className="sr-only"
                 aria-label={`${formatDate(o.date, "long")}: ${

@@ -1,4 +1,4 @@
-.PHONY: setup dev web optimizer test lint seed check api-types db-start db-stop db-reset db-status db-env db-types db-doctor e2e
+.PHONY: setup dev web optimizer test lint seed check api-types db-start db-stop db-reset db-status db-env db-types db-doctor db-check e2e
 
 setup:            ## Install everything
 	cd apps/web && npm install
@@ -47,6 +47,9 @@ db-stop:          ## Stop it (data is kept in a Docker volume)
 db-reset:         ## Wipe local DB, re-run supabase/migrations + seed
 	python3 supabase/generate_seed_sql.py
 	$(SUPABASE) db reset
+
+db-check:         ## Database security invariants (RLS everywhere, nothing for anon, ...)
+	@sh supabase/check-security.sh
 
 db-doctor:        ## Check the Docker VM clock (sign-in breaks if it drifts after sleep)
 	@sh supabase/doctor.sh

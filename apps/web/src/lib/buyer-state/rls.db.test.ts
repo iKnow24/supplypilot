@@ -343,8 +343,12 @@ describe("SupabaseBuyerStateRepository", () => {
     await expect(repo.saveCartAsList(name)).rejects.toThrow(/already have a list/);
     const copy = await repo.duplicateList(id, `${name} (copy)`);
     created.push(copy);
+    const before = (await repo.listSavedLists()).find((l) => l.id === copy)!.updatedAt;
+    await new Promise((r) => setTimeout(r, 20));
     await repo.renameList(copy, `${name} renamed`);
     const lists = await repo.listSavedLists();
+    // The updated_at trigger still fires for buyers (it isn't callable, only triggered).
+    expect(lists.find((l) => l.id === copy)!.updatedAt.getTime()).toBeGreaterThan(before.getTime());
     expect(lists.find((l) => l.id === copy)?.name).toBe(`${name} renamed`);
     expect(lists.find((l) => l.id === copy)?.lines).toEqual(lists.find((l) => l.id === id)?.lines);
     await repo.deleteList(copy);

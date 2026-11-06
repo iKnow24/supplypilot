@@ -1,0 +1,16 @@
+# Only services/optimizer and data/seed are copied into the optimizer image.
+**/node_modules
+**/.next
+**/.venv
+**/__pycache__
+**/.mypy_cache
+**/.pytest_cache
+**/.ruff_cache
+**/test-results
+**/playwright-report
+.git
+.env*
+**/.env*
+supabase/.temp
+supabase/.branches
+.claude

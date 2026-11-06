@@ -14,8 +14,9 @@ distributors (prices, packs, stock, fees, minimums, delivery days) and explains 
 Milestones 1–5 are done: foundation, shopping workflow (persistent cart, saved lists, CSV upload,
 delivery date, supplier preferences), the CP-SAT optimizer (`POST /v1/optimize`), the
 recommendations UI ("Find My Best Price", results, alternatives, history), and purchase orders
-(approve, draft POs per supplier, CSV/PDF export, reorder). Next is M6, polish and deployment.
-See [`docs/implementation-checklist.md`](docs/implementation-checklist.md).
+(approve, draft POs per supplier, CSV/PDF export, reorder). M6 added the accessibility,
+security and deployment pass. See [`docs/implementation-checklist.md`](docs/implementation-checklist.md),
+the [demo script](docs/demo-script.md) and [how to deploy](docs/deployment.md).
 
 ## Run it locally
 
@@ -81,6 +82,7 @@ cd apps/web && npm run test:db   # RLS + repository tests against local Supabase
 make e2e        # Playwright: the real app in Chromium against local Supabase
 make seed       # regenerate data/seed/demo_catalog.json after editing generate_seed.py
 make api-types  # regenerate docs/openapi.json + web TS types after changing optimizer models
+make db-check   # database security invariants (RLS on every table, nothing for anon, ...)
 ```
 
 ## Repo map
@@ -113,7 +115,8 @@ works from `apps/web` on your machine.
   `docs/api-contract.md`, then the frontend builds against a fixture JSON while the backend
   makes it real.
 
-## Deploying later (not set up)
+## Deploying
 
-Vercel (web), a Python host such as Fly.io/Render/Railway (optimizer), Supabase (Postgres +
-Auth). None of these are covered by Claude Max; each has its own (mostly free-tier) billing.
+See [`docs/deployment.md`](docs/deployment.md): Supabase (Postgres + Auth), Vercel (web), and a
+container host such as Fly.io/Render/Railway for the optimizer (`services/optimizer/Dockerfile`).
+None of these are covered by Claude Max; each has its own (mostly free-tier) billing.

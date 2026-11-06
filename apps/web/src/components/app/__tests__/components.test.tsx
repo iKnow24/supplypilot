@@ -83,6 +83,6 @@ describe("SupplierCard", () => {
     expect(screen.getByText(/Not in Winter Park/)).toBeInTheDocument();
     expect(screen.getByText("None")).toBeInTheDocument(); // no order minimum
     expect(screen.getByText(/1 item need fresh data/)).toBeInTheDocument();
-    expect(screen.getByLabelText("Mon, Wed")).toBeInTheDocument();
+    expect(screen.getByText("Monday, Wednesday")).toHaveClass("sr-only"); // what screen readers hear
   });
 });

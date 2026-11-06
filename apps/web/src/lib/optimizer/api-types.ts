@@ -385,7 +385,9 @@ export interface operations {
   optimize_basket_v1_optimize_post: {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        "x-api-key"?: string | null;
+      };
       path?: never;
       cookie?: never;
     };
@@ -403,6 +405,20 @@ export interface operations {
         content: {
           "application/json": components["schemas"]["OptimizeResponse"];
         };
+      };
+      /** @description OPTIMIZER_API_KEY is set and the X-API-Key header is missing or wrong */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Request body too large */
+      413: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
       /** @description Invalid request, or it refers to an unknown buyer, product, unit or zone */
       422: {

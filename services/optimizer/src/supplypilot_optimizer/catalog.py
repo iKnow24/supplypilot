@@ -288,12 +288,17 @@ class Catalog(Strict):
         return self
 
 
-REPO_ROOT = Path(__file__).resolve().parents[4]
-DEFAULT_CATALOG_PATH = REPO_ROOT / "data" / "seed" / "demo_catalog.json"
-
-
 def catalog_path() -> Path:
-    return Path(os.environ.get("SUPPLYPILOT_CATALOG_PATH", DEFAULT_CATALOG_PATH))
+    """SUPPLYPILOT_CATALOG_PATH if set (containers, real data); otherwise the repo's demo catalog,
+    found by walking up from this file (works from a checkout, however it's installed)."""
+    configured = os.environ.get("SUPPLYPILOT_CATALOG_PATH")
+    if configured:
+        return Path(configured)
+    for parent in Path(__file__).resolve().parents:
+        candidate = parent / "data" / "seed" / "demo_catalog.json"
+        if candidate.is_file():
+            return candidate
+    raise FileNotFoundError("data/seed/demo_catalog.json not found; set SUPPLYPILOT_CATALOG_PATH")
 
 
 def load_catalog(path: Path | None = None) -> Catalog:

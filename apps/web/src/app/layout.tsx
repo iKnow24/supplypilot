@@ -52,7 +52,11 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
             </div>
           </div>
         </header>
-        <main id="main" className="mx-auto max-w-6xl px-4 pt-8 pb-28 sm:px-6 md:pb-16">
+        <main
+          id="main"
+          tabIndex={-1}
+          className="mx-auto max-w-6xl px-4 pt-8 pb-28 outline-none sm:px-6 md:pb-16"
+        >
           {children}
         </main>
         <MobileTabBar />
