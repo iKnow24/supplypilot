@@ -7,15 +7,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getRepository } from "@/lib/catalog/seed-repository";
 import { formatDate, nextDeliveryDates } from "@/lib/delivery";
-import { getCurrentBuyer } from "@/lib/demo-session";
+import { loadSavedListAndOpen } from "@/app/cart/actions";
+import { PersistenceNotice } from "@/components/app/persistence-notice";
+import { getSession } from "@/lib/session";
 import { baselineSuppliers, greeting } from "@/lib/view";
 
 export default async function HomePage() {
   const repo = getRepository();
-  const buyer = await getCurrentBuyer();
+  const { buyer, persistence, state } = await getSession();
   const [source, lists, suppliers] = await Promise.all([
     repo.source(),
-    repo.listSavedLists(buyer.id),
+    state ? state.listSavedLists() : Promise.resolve([]),
     repo.listSuppliers(),
   ]);
   const zone = buyer.locations[0]!.zone;
@@ -49,9 +51,12 @@ export default async function HomePage() {
             </Link>
           </Button>
           {lists[0] ? (
-            <Button asChild size="lg" variant="outline">
-              <Link href={`/cart?list=${lists[0].id}`}>Start from “{lists[0].name}”</Link>
-            </Button>
+            <form action={loadSavedListAndOpen}>
+              <input type="hidden" name="listId" value={lists[0].id} />
+              <Button type="submit" size="lg" variant="outline" className="w-full sm:w-auto">
+                Start from “{lists[0].name}”
+              </Button>
+            </form>
           ) : null}
         </div>
       </section>
@@ -61,7 +66,9 @@ export default async function HomePage() {
           <h2 id="lists" className="mb-3 text-lg font-semibold">
             Saved weekly lists
           </h2>
-          {lists.length === 0 ? (
+          {!state ? (
+            <PersistenceNotice persistence={persistence} />
+          ) : lists.length === 0 ? (
             <EmptyState icon={ClipboardList} title="No saved lists yet">
               Save a cart as a weekly list to reorder it in one click.
             </EmptyState>
@@ -78,9 +85,12 @@ export default async function HomePage() {
                           {baselineSuppliers(list, suppliers).join(", ")}
                         </p>
                       </div>
-                      <Button asChild variant="outline">
-                        <Link href={`/cart?list=${list.id}`}>Open in Smart Cart</Link>
-                      </Button>
+                      <form action={loadSavedListAndOpen}>
+                        <input type="hidden" name="listId" value={list.id} />
+                        <Button type="submit" variant="outline">
+                          Open in Smart Cart
+                        </Button>
+                      </form>
                     </CardContent>
                   </Card>
                 </li>

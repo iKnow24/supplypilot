@@ -1,147 +1,235 @@
 import { ClipboardList, Info, ShoppingCart } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
 
 import { EmptyState } from "@/components/app/empty-state";
 import { PageHeader } from "@/components/app/page-header";
+import { PersistenceNotice } from "@/components/app/persistence-notice";
+import { CartToolbar } from "@/components/cart/cart-toolbar";
+import { CartWorkspace } from "@/components/cart/cart-workspace";
+import { CsvImport } from "@/components/cart/csv-import";
+import { DeliveryDatePicker, type DateOptionView } from "@/components/cart/delivery-date-picker";
+import { StatusProvider } from "@/components/cart/status";
+import { SupplierPreferences } from "@/components/cart/supplier-preferences";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import type { SupplierPreference } from "@/lib/buyer-state/repository";
+import { deliveryOptions } from "@/lib/cart/delivery-options";
+import { copyName } from "@/lib/cart/names";
 import { getRepository } from "@/lib/catalog/seed-repository";
-import { formatDate, nextDeliveryDates } from "@/lib/delivery";
-import { getCurrentBuyer } from "@/lib/demo-session";
-import { UnitTable, formatQuantity } from "@/lib/units";
+import { formatDate, formatTime } from "@/lib/delivery";
+import { getSession } from "@/lib/session";
+
+import { loadSavedListAndOpen } from "./actions";
 
 export const metadata: Metadata = { title: "Smart Cart" };
 
 export default async function CartPage({ searchParams }: PageProps<"/cart">) {
-  const { list: listId } = await searchParams;
+  const { error } = await searchParams;
   const repo = getRepository();
-  const buyer = await getCurrentBuyer();
-  const [lists, products, suppliers, units, source] = await Promise.all([
-    repo.listSavedLists(buyer.id),
+  const { buyer, persistence, state } = await getSession();
+  const [products, units, suppliers, source] = await Promise.all([
     repo.listProducts(),
-    repo.listSuppliers(),
     repo.units(),
+    repo.listSuppliers(),
     repo.source(),
   ]);
-  const table = new UnitTable(units);
-  const list = lists.find((l) => l.id === listId);
-  const zone = buyer.locations[0]!.zone;
-  const earliest = suppliers
-    .flatMap((s) => nextDeliveryDates(s.policy, zone, source.now, source.timezone, 1))
-    .sort()[0];
+
+  if (!state) {
+    return (
+      <div>
+        <PageHeader title="Smart Cart" />
+        <PersistenceNotice persistence={persistence} />
+        <EmptyState icon={ShoppingCart} title="Your cart needs the database">
+          Carts and saved lists are stored per business in the database, so they stay private and
+          survive a refresh. Once it&apos;s connected, you can search products, edit quantities,
+          upload a CSV and pick a delivery date here.
+        </EmptyState>
+      </div>
+    );
+  }
+
+  const [cart, favorites, lists] = await Promise.all([
+    state.getCart(),
+    state.listFavorites(),
+    state.listSavedLists(),
+  ]);
+  const location = buyer.locations[0]!;
+  const supplierNames = Object.fromEntries(suppliers.map((s) => [s.id, s.short_name]));
+  const excluded = new Set(cart.excludedSupplierIds);
+  const preferred = new Set(cart.preferredSupplierIds);
+
+  const options: DateOptionView[] = deliveryOptions(
+    suppliers,
+    location.zone,
+    source.now,
+    source.timezone,
+    excluded,
+  ).map((o) => ({
+    date: o.date,
+    availableCount: o.available.length,
+    suppliers: o.checks.map((c) => ({
+      id: c.supplierId,
+      name: supplierNames[c.supplierId] ?? c.supplierId,
+      ok: c.check.ok,
+      excluded: c.excluded,
+      detail: c.check.ok
+        ? `Order by ${formatDate(c.check.orderBy.date)}, ${formatTime(c.check.orderBy.time)}`
+        : c.check.message,
+    })),
+  }));
+  const selected = options.find((o) => o.date === cart.deliveryDate);
+  const baseline = lists.find((l) => l.id === cart.sourceListId);
+  const takenNames = new Set(lists.map((l) => l.name));
+  const wantedName = baseline?.name ?? "Weekly order";
+  const defaultListName = takenNames.has(wantedName)
+    ? copyName(wantedName, takenNames)
+    : wantedName;
+
+  const preferenceRows = suppliers.map(
+    (s): { id: string; name: string; preference: SupplierPreference } => ({
+      id: s.id,
+      name: s.short_name,
+      preference: preferred.has(s.id) ? "preferred" : excluded.has(s.id) ? "excluded" : "neutral",
+    }),
+  );
 
   return (
-    <div>
+    <StatusProvider>
       <PageHeader
         title="Smart Cart"
         description="Add what you need. We find the lowest total delivered cost across your suppliers."
+        actions={<CartToolbar defaultName={defaultListName} hasLines={cart.lines.length > 0} />}
       />
-
-      {!list ? (
-        <EmptyState
-          icon={ShoppingCart}
-          title="Your cart is empty"
-          action={
-            lists.length ? (
-              <div className="flex flex-wrap justify-center gap-2">
-                {lists.map((l) => (
-                  <Button key={l.id} asChild variant="outline">
-                    <Link href={`/cart?list=${l.id}`}>
-                      <ClipboardList aria-hidden /> Load “{l.name}”
-                    </Link>
-                  </Button>
-                ))}
-              </div>
-            ) : null
-          }
+      {typeof error === "string" ? (
+        <p
+          role="alert"
+          className="bg-destructive-soft text-destructive mb-6 rounded-xl px-4 py-3 text-sm"
         >
-          Start from a saved weekly list. Product search, quantity editing and CSV upload are being
-          built next.
-        </EmptyState>
-      ) : (
-        <div className="grid gap-6 lg:grid-cols-3">
-          <Card className="lg:col-span-2">
+          {error}
+        </p>
+      ) : null}
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="space-y-6 lg:col-span-2">
+          <Card>
             <CardHeader>
-              <CardTitle>{list.name}</CardTitle>
+              <CardTitle>Your list</CardTitle>
               <CardDescription>
-                {list.lines.length} items, loaded from your saved list
+                {cart.lines.length} item{cart.lines.length === 1 ? "" : "s"}
+                {baseline ? <> · loaded from “{baseline.name}”</> : null}. Changes save
+                automatically.
               </CardDescription>
             </CardHeader>
-            <CardContent className="px-2 sm:px-3">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Item</TableHead>
-                    <TableHead className="text-right">Quantity</TableHead>
-                    <TableHead className="hidden sm:table-cell">Usually from</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {list.lines.map((line) => {
-                    const product = products.find((p) => p.id === line.product_id)!;
-                    const supplier = suppliers.find((s) => s.id === line.current_supplier_id);
-                    return (
-                      <TableRow key={line.product_id}>
-                        <TableCell>
-                          <p className="font-medium">{product.name}</p>
-                          <p className="text-muted-foreground text-xs">{product.spec}</p>
-                        </TableCell>
-                        <TableCell className="tabular text-right whitespace-nowrap">
-                          {formatQuantity(Number(line.quantity), table.get(line.unit))}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground hidden sm:table-cell">
-                          {supplier?.short_name ?? "—"}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+            <CardContent>
+              <CartWorkspace
+                products={products}
+                units={units}
+                lines={cart.lines}
+                favorites={favorites}
+                supplierNames={supplierNames}
+              />
             </CardContent>
           </Card>
 
-          <div className="space-y-4">
+          {lists.length ? (
             <Card>
               <CardHeader>
-                <CardTitle>Summary</CardTitle>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <ClipboardList className="text-muted-foreground size-4" aria-hidden />
+                  Start from a saved list
+                </CardTitle>
+                <CardDescription>
+                  Loading a list replaces what&apos;s in the cart and sets it as your baseline.
+                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4 text-sm">
-                <dl className="space-y-2">
-                  <div className="flex justify-between">
-                    <dt className="text-muted-foreground">Items</dt>
-                    <dd className="tabular font-medium">{list.lines.length}</dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-muted-foreground">Deliver to</dt>
-                    <dd className="font-medium">{buyer.locations[0]!.name}</dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-muted-foreground">Earliest delivery</dt>
-                    <dd className="tabular font-medium">{earliest ? formatDate(earliest) : "—"}</dd>
-                  </div>
-                </dl>
-                <Button size="lg" className="w-full" disabled aria-describedby="optimizer-note">
-                  Find My Best Price
-                </Button>
-                <p id="optimizer-note" className="text-muted-foreground flex gap-2 text-xs">
-                  <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-                  The price optimizer isn&apos;t connected in this build yet. We won&apos;t show a
-                  price until it is calculated for real.
-                </p>
+              <CardContent className="flex flex-wrap gap-2">
+                {lists.map((l) => (
+                  <form key={l.id} action={loadSavedListAndOpen}>
+                    <input type="hidden" name="listId" value={l.id} />
+                    <Button type="submit" variant="outline" size="sm">
+                      Load “{l.name}” ({l.lines.length})
+                    </Button>
+                  </form>
+                ))}
               </CardContent>
             </Card>
-          </div>
+          ) : null}
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Upload a CSV</CardTitle>
+              <CardDescription>
+                Paste your order from a spreadsheet. We check every row before anything changes.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <CsvImport products={products} units={units} cartHasLines={cart.lines.length > 0} />
+            </CardContent>
+          </Card>
         </div>
-      )}
-    </div>
+
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Summary</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm">
+              <dl className="space-y-2">
+                <div className="flex justify-between gap-4">
+                  <dt className="text-muted-foreground">Items</dt>
+                  <dd className="tabular font-medium">{cart.lines.length}</dd>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <dt className="text-muted-foreground">Deliver to</dt>
+                  <dd className="text-right font-medium">{location.name}</dd>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <dt className="text-muted-foreground">Delivery date</dt>
+                  <dd className="tabular font-medium">
+                    {selected ? formatDate(selected.date) : "Not set"}
+                  </dd>
+                </div>
+                {selected ? (
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-muted-foreground">Suppliers that day</dt>
+                    <dd className="tabular font-medium">{selected.availableCount}</dd>
+                  </div>
+                ) : null}
+                <div className="flex justify-between gap-4">
+                  <dt className="text-muted-foreground">Baseline</dt>
+                  <dd className="text-right font-medium">{baseline ? baseline.name : "None"}</dd>
+                </div>
+              </dl>
+              <Button size="lg" className="w-full" disabled aria-describedby="optimizer-note">
+                Find My Best Price
+              </Button>
+              <p id="optimizer-note" className="text-muted-foreground flex gap-2 text-xs">
+                <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+                The price optimizer isn&apos;t connected in this build yet. We won&apos;t show a
+                price until it is calculated for real.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-5 sm:pt-6">
+              <DeliveryDatePicker options={options} selected={cart.deliveryDate} />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Suppliers</CardTitle>
+              <CardDescription>
+                Choose who you&apos;re willing to buy from for this order.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <SupplierPreferences suppliers={preferenceRows} />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </StatusProvider>
   );
 }

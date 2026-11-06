@@ -16,11 +16,12 @@ describe("navigation", () => {
     expect(screen.getByRole("link", { name: "Home" })).not.toHaveAttribute("aria-current");
   });
 
-  it("renders the four primary destinations on mobile", () => {
+  it("renders the five primary destinations on mobile", () => {
     render(<MobileTabBar />);
     expect(screen.getAllByRole("link").map((l) => l.textContent)).toEqual([
       "Home",
       "Smart Cart",
+      "Lists",
       "Orders",
       "Suppliers",
     ]);

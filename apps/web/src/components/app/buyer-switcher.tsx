@@ -1,10 +1,16 @@
 "use client";
 
+import { useTransition } from "react";
+
 import { switchDemoBuyer } from "@/app/actions";
 import type { BuyerSummary } from "@/lib/catalog/repository";
 
 const KIND_LABEL = { bakery: "Bakery", cafe: "Café", restaurant: "Restaurant" } as const;
 
+/**
+ * Switching buyer switches identity (demo sign-in), so we finish with a full page load:
+ * that drops the client router cache, which may still hold the previous buyer's pages.
+ */
 export function BuyerSwitcher({
   buyers,
   currentId,
@@ -14,6 +20,7 @@ export function BuyerSwitcher({
   currentId: string;
   compact?: boolean;
 }) {
+  const [pending, startTransition] = useTransition();
   return (
     <form action={switchDemoBuyer}>
       <label
@@ -23,11 +30,20 @@ export function BuyerSwitcher({
         Ordering for
       </label>
       <select
+        key={currentId}
         id={compact ? "buyer-compact" : "buyer"}
         name="buyerId"
         defaultValue={currentId}
-        onChange={(e) => e.currentTarget.form?.requestSubmit()}
-        className="border-input bg-card h-9 max-w-[11rem] rounded-lg border px-2.5 text-sm font-medium sm:max-w-[16rem]"
+        disabled={pending}
+        aria-busy={pending}
+        onChange={(e) => {
+          const data = new FormData(e.currentTarget.form!);
+          startTransition(async () => {
+            await switchDemoBuyer(data);
+            window.location.reload();
+          });
+        }}
+        className="border-input bg-card h-9 max-w-[11rem] rounded-lg border px-2.5 text-sm font-medium disabled:opacity-60 sm:max-w-[16rem]"
       >
         {buyers.map((b) => (
           <option key={b.id} value={b.id}>

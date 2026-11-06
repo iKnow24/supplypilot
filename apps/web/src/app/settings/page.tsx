@@ -4,15 +4,16 @@ import { BuyerSwitcher } from "@/components/app/buyer-switcher";
 import { PageHeader } from "@/components/app/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getRepository } from "@/lib/catalog/seed-repository";
-import { getCurrentBuyer } from "@/lib/demo-session";
+import { PersistenceNotice } from "@/components/app/persistence-notice";
+import { getSession } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Settings" };
 
 export default async function SettingsPage() {
   const repo = getRepository();
-  const [buyers, buyer, source, zones] = await Promise.all([
+  const [buyers, { buyer, persistence }, source, zones] = await Promise.all([
     repo.listBuyers(),
-    getCurrentBuyer(),
+    getSession(),
     repo.source(),
     repo.zones(),
   ]);
@@ -24,12 +25,21 @@ export default async function SettingsPage() {
         <CardHeader>
           <CardTitle>Demo business</CardTitle>
           <CardDescription>
-            Sign-in isn&apos;t set up yet. Pick one of the fictional businesses to see its saved
-            lists and its own negotiated prices.
+            Each fictional business has a demo account. Switching signs you in as that business, so
+            you only ever see its own cart, saved lists and negotiated prices. Real sign-in replaces
+            this before any real buyer uses SupplyPilot.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <BuyerSwitcher buyers={buyers} currentId={buyer.id} />
+          {persistence.status === "ready" ? (
+            <p className="text-muted-foreground text-sm">
+              Signed in as <span className="font-mono text-xs">{persistence.email}</span>. Carts and
+              lists are saved to the database.
+            </p>
+          ) : (
+            <PersistenceNotice persistence={persistence} />
+          )}
           <p className="text-muted-foreground text-sm">
             Delivery location: {loc.name} ({zones.find((z) => z.id === loc.zone)?.name}).{" "}
             {loc.address_label}.

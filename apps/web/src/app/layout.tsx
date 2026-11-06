@@ -9,7 +9,7 @@ import { DemoBanner } from "@/components/app/demo-banner";
 import { Logo } from "@/components/app/logo";
 import { DesktopNav, MobileTabBar } from "@/components/app/nav-links";
 import { getRepository } from "@/lib/catalog/seed-repository";
-import { getCurrentBuyer } from "@/lib/demo-session";
+import { getSession } from "@/lib/session";
 
 import "./globals.css";
 
@@ -20,10 +20,10 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const repo = getRepository();
-  const [source, buyers, buyer] = await Promise.all([
+  const [source, buyers, { buyer }] = await Promise.all([
     repo.source(),
     repo.listBuyers(),
-    getCurrentBuyer(),
+    getSession(),
   ]);
 
   return (
