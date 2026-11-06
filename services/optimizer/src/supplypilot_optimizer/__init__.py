@@ -1,7 +1,7 @@
 """SupplyPilot optimizer service.
 
-Milestone 1 ships the typed catalog contract, exact unit math and the HTTP
-skeleton. The CP-SAT basket optimizer lands in Milestone 3.
+Typed catalog contract, exact unit math, offer eligibility and the CP-SAT
+total-delivered-cost optimizer behind POST /v1/optimize.
 """
 
 __version__ = "0.1.0"

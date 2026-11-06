@@ -27,15 +27,20 @@ Tick only what works and is tested.
 - [x] Playwright e2e: load list -> edit -> set date (+ CSV, saved lists, tenant isolation); CI job
       runs DB tests and e2e against local Supabase
 
-## Milestone 3 — Optimizer
-- [ ] `POST /v1/optimize` request/response schemas (Pydantic) + generated TS types
-- [ ] Offer eligibility (zone, day, cutoff, freshness, exclusions) with reasons
-- [ ] CP-SAT model: integer packs per offer, coverage >= need, stock, min packs, tiers,
-      supplier-used booleans, minimums, fee/free-threshold, objective in cents, deterministic tie-break
-- [ ] Infeasibility explainer (per line and per supplier)
-- [ ] Baseline costing
-- [ ] Alternatives: fewest suppliers, preferred suppliers, lowest item subtotal
-- [ ] Tests: all 8 scenarios + brute-force cross-check on random small baskets
+## Milestone 3 — Optimizer ✅
+- [x] `POST /v1/optimize` request/response schemas (Pydantic) + generated OpenAPI + TS types
+      (CI checks they're current)
+- [x] Offer eligibility (zone, day, cutoff, freshness, stock, mapping review, exclusions,
+      approved equivalences) with reasons
+- [x] CP-SAT model: integer packs per offer, coverage >= need (exact fractions), stock, min packs,
+      all-units tiers, supplier-used booleans, minimums, fee/free-threshold, objective in cents,
+      deterministic lexicographic tie-break
+- [x] Infeasibility explainer (per line: no eligible offer / not enough stock / only from
+      suppliers whose minimum can't be met; per supplier: minimum unreachable)
+- [x] Baseline costing (buyer's usual supplier per line; no savings unless it can be priced)
+- [x] Alternatives: fewest suppliers, preferred suppliers, lowest item subtotal
+- [x] Tests: all 8 scenarios as business assertions + brute-force cross-check on 228 random
+      small baskets (60 feasible), eligibility/pricing, API
 
 ## Milestone 4 — Recommendations UI
 - [ ] Wire "Find My Best Price" via server action; loading/error/infeasible states

@@ -1,4 +1,4 @@
-.PHONY: setup dev web optimizer test lint seed check db-start db-stop db-reset db-status db-env db-types db-doctor e2e
+.PHONY: setup dev web optimizer test lint seed check api-types db-start db-stop db-reset db-status db-env db-types db-doctor e2e
 
 setup:            ## Install everything
 	cd apps/web && npm install
@@ -23,6 +23,11 @@ test:
 lint:
 	cd services/optimizer && uv run ruff check . && uv run ruff format --check . && uv run mypy src
 	cd apps/web && npm run lint && npm run typecheck && npm run format:check
+
+api-types:        ## Regenerate docs/openapi.json + the web app's TS types from the optimizer's models
+	cd services/optimizer && uv run python -m supplypilot_optimizer.openapi > ../../docs/openapi.json
+	npx --yes openapi-typescript@7.13.0 docs/openapi.json -o apps/web/src/lib/optimizer/api-types.ts
+	cd apps/web && npx prettier --write src/lib/optimizer/api-types.ts > /dev/null
 
 check: lint test  ## Everything CI runs
 

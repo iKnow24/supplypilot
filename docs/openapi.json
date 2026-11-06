@@ -1,0 +1,813 @@
+{
+  "components": {
+    "schemas": {
+      "Allocation": {
+        "additionalProperties": false,
+        "description": "Packs bought from one offer for one requested line.",
+        "properties": {
+          "line_total_cents": {
+            "title": "Line Total Cents",
+            "type": "integer"
+          },
+          "offer_id": {
+            "title": "Offer Id",
+            "type": "string"
+          },
+          "pack_label": {
+            "title": "Pack Label",
+            "type": "string"
+          },
+          "pack_price_cents": {
+            "title": "Pack Price Cents",
+            "type": "integer"
+          },
+          "pack_quantity": {
+            "title": "Pack Quantity",
+            "type": "string"
+          },
+          "pack_unit": {
+            "title": "Pack Unit",
+            "type": "string"
+          },
+          "packs": {
+            "title": "Packs",
+            "type": "integer"
+          },
+          "price_basis": {
+            "enum": [
+              "contract",
+              "list",
+              "volume_tier"
+            ],
+            "title": "Price Basis",
+            "type": "string"
+          },
+          "product_id": {
+            "description": "The product actually bought (may be an approved equivalent)",
+            "title": "Product Id",
+            "type": "string"
+          },
+          "supplier_id": {
+            "title": "Supplier Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "offer_id",
+          "supplier_id",
+          "product_id",
+          "packs",
+          "pack_label",
+          "pack_quantity",
+          "pack_unit",
+          "pack_price_cents",
+          "price_basis",
+          "line_total_cents"
+        ],
+        "title": "Allocation",
+        "type": "object"
+      },
+      "Alternative": {
+        "additionalProperties": false,
+        "properties": {
+          "delta_cents": {
+            "description": "This plan's total minus the recommendation's (>= 0)",
+            "title": "Delta Cents",
+            "type": "integer"
+          },
+          "kind": {
+            "enum": [
+              "fewest_suppliers",
+              "preferred_suppliers",
+              "lowest_item_subtotal"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "plan": {
+            "$ref": "#/components/schemas/Plan"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "tradeoff": {
+            "title": "Tradeoff",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "title",
+          "plan",
+          "delta_cents",
+          "tradeoff"
+        ],
+        "title": "Alternative",
+        "type": "object"
+      },
+      "Baseline": {
+        "additionalProperties": false,
+        "properties": {
+          "plan": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Plan"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Why there's no baseline price, when unavailable",
+            "title": "Reason"
+          },
+          "status": {
+            "enum": [
+              "priced",
+              "unavailable"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "plan",
+          "reason"
+        ],
+        "title": "Baseline",
+        "type": "object"
+      },
+      "BaselineLine": {
+        "additionalProperties": false,
+        "properties": {
+          "product_id": {
+            "title": "Product Id",
+            "type": "string"
+          },
+          "supplier_id": {
+            "title": "Supplier Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "product_id",
+          "supplier_id"
+        ],
+        "title": "BaselineLine",
+        "type": "object"
+      },
+      "BaselineRequest": {
+        "additionalProperties": false,
+        "description": "The buyer's habit: which supplier they usually buy each line from.",
+        "properties": {
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/BaselineLine"
+            },
+            "title": "Lines",
+            "type": "array"
+          }
+        },
+        "required": [
+          "lines"
+        ],
+        "title": "BaselineRequest",
+        "type": "object"
+      },
+      "DataSource": {
+        "additionalProperties": false,
+        "properties": {
+          "as_of": {
+            "description": "The 'now' used for cutoffs and freshness",
+            "format": "date-time",
+            "title": "As Of",
+            "type": "string"
+          },
+          "dataset": {
+            "title": "Dataset",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "synthetic": {
+            "title": "Synthetic",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "dataset",
+          "synthetic",
+          "label",
+          "as_of"
+        ],
+        "title": "DataSource",
+        "type": "object"
+      },
+      "ExcludedOffer": {
+        "additionalProperties": false,
+        "properties": {
+          "offer_id": {
+            "title": "Offer Id",
+            "type": "string"
+          },
+          "product_id": {
+            "title": "Product Id",
+            "type": "string"
+          },
+          "reasons": {
+            "items": {
+              "$ref": "#/components/schemas/Reason"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "supplier_id": {
+            "title": "Supplier Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "offer_id",
+          "supplier_id",
+          "product_id",
+          "reasons"
+        ],
+        "title": "ExcludedOffer",
+        "type": "object"
+      },
+      "Health": {
+        "properties": {
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Counts",
+            "type": "object"
+          },
+          "data_label": {
+            "title": "Data Label",
+            "type": "string"
+          },
+          "dataset": {
+            "title": "Dataset",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "synthetic": {
+            "title": "Synthetic",
+            "type": "boolean"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "version",
+          "dataset",
+          "synthetic",
+          "data_label",
+          "counts"
+        ],
+        "title": "Health",
+        "type": "object"
+      },
+      "OptimizeRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "baseline": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BaselineRequest"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "buyer_id": {
+            "title": "Buyer Id",
+            "type": "string"
+          },
+          "delivery_date": {
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "title": "Delivery Date",
+            "type": "string"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/RequestLine"
+            },
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Lines",
+            "type": "array"
+          },
+          "preferences": {
+            "$ref": "#/components/schemas/Preferences"
+          },
+          "zone": {
+            "title": "Zone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "buyer_id",
+          "zone",
+          "delivery_date",
+          "lines"
+        ],
+        "title": "OptimizeRequest",
+        "type": "object"
+      },
+      "OptimizeResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "alternatives": {
+            "items": {
+              "$ref": "#/components/schemas/Alternative"
+            },
+            "title": "Alternatives",
+            "type": "array"
+          },
+          "baseline": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Baseline"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Null when the request had no baseline"
+          },
+          "data": {
+            "$ref": "#/components/schemas/DataSource"
+          },
+          "delivery_date": {
+            "title": "Delivery Date",
+            "type": "string"
+          },
+          "excluded_offers": {
+            "items": {
+              "$ref": "#/components/schemas/ExcludedOffer"
+            },
+            "title": "Excluded Offers",
+            "type": "array"
+          },
+          "explanations": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Explanations",
+            "type": "array"
+          },
+          "problems": {
+            "items": {
+              "$ref": "#/components/schemas/Problem"
+            },
+            "title": "Problems",
+            "type": "array"
+          },
+          "recommendation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Plan"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "savings_cents": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Baseline total minus recommendation total. Only set when the baseline was priced.",
+            "title": "Savings Cents"
+          },
+          "status": {
+            "enum": [
+              "optimal",
+              "infeasible"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "zone": {
+            "title": "Zone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "delivery_date",
+          "zone",
+          "recommendation",
+          "alternatives",
+          "baseline",
+          "savings_cents",
+          "explanations",
+          "problems",
+          "excluded_offers",
+          "data"
+        ],
+        "title": "OptimizeResponse",
+        "type": "object"
+      },
+      "OrderBy": {
+        "additionalProperties": false,
+        "properties": {
+          "date": {
+            "title": "Date",
+            "type": "string"
+          },
+          "time": {
+            "title": "Time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "time"
+        ],
+        "title": "OrderBy",
+        "type": "object"
+      },
+      "Plan": {
+        "additionalProperties": false,
+        "properties": {
+          "fees_cents": {
+            "title": "Fees Cents",
+            "type": "integer"
+          },
+          "items_subtotal_cents": {
+            "title": "Items Subtotal Cents",
+            "type": "integer"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/PlanLine"
+            },
+            "title": "Lines",
+            "type": "array"
+          },
+          "supplier_count": {
+            "title": "Supplier Count",
+            "type": "integer"
+          },
+          "suppliers": {
+            "items": {
+              "$ref": "#/components/schemas/SupplierOrder"
+            },
+            "title": "Suppliers",
+            "type": "array"
+          },
+          "total_cents": {
+            "title": "Total Cents",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total_cents",
+          "items_subtotal_cents",
+          "fees_cents",
+          "supplier_count",
+          "suppliers",
+          "lines"
+        ],
+        "title": "Plan",
+        "type": "object"
+      },
+      "PlanLine": {
+        "additionalProperties": false,
+        "properties": {
+          "allocations": {
+            "items": {
+              "$ref": "#/components/schemas/Allocation"
+            },
+            "title": "Allocations",
+            "type": "array"
+          },
+          "overbuy_quantity": {
+            "description": "purchased - requested, in the requested unit (3 dp)",
+            "title": "Overbuy Quantity",
+            "type": "string"
+          },
+          "product_id": {
+            "description": "The product the buyer asked for",
+            "title": "Product Id",
+            "type": "string"
+          },
+          "purchased_quantity": {
+            "description": "What the packs add up to, in the requested unit (3 dp)",
+            "title": "Purchased Quantity",
+            "type": "string"
+          },
+          "requested_quantity": {
+            "title": "Requested Quantity",
+            "type": "string"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          }
+        },
+        "required": [
+          "product_id",
+          "requested_quantity",
+          "unit",
+          "purchased_quantity",
+          "overbuy_quantity",
+          "allocations"
+        ],
+        "title": "PlanLine",
+        "type": "object"
+      },
+      "Preferences": {
+        "additionalProperties": false,
+        "properties": {
+          "allow_equivalences": {
+            "default": true,
+            "description": "Use equivalent products only where the buyer has approved that equivalence.",
+            "title": "Allow Equivalences",
+            "type": "boolean"
+          },
+          "excluded_supplier_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Excluded Supplier Ids",
+            "type": "array"
+          },
+          "preferred_supplier_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Preferred Supplier Ids",
+            "type": "array"
+          }
+        },
+        "title": "Preferences",
+        "type": "object"
+      },
+      "Problem": {
+        "additionalProperties": false,
+        "description": "Why no plan exists, at the most specific scope we can name.",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "product_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Id"
+          },
+          "scope": {
+            "enum": [
+              "line",
+              "supplier",
+              "order"
+            ],
+            "title": "Scope",
+            "type": "string"
+          },
+          "supplier_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supplier Id"
+          }
+        },
+        "required": [
+          "scope",
+          "code",
+          "message"
+        ],
+        "title": "Problem",
+        "type": "object"
+      },
+      "Reason": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "enum": [
+              "excluded_by_buyer",
+              "zone",
+              "weekday",
+              "cutoff_passed",
+              "stale_price",
+              "stale_inventory",
+              "missing_inventory",
+              "out_of_stock",
+              "unreviewed_mapping",
+              "equivalence_not_approved"
+            ],
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "Reason",
+        "type": "object"
+      },
+      "RequestLine": {
+        "additionalProperties": false,
+        "properties": {
+          "product_id": {
+            "title": "Product Id",
+            "type": "string"
+          },
+          "quantity": {
+            "description": "Positive decimal string, e.g. '250' or '2.5'",
+            "title": "Quantity",
+            "type": "string"
+          },
+          "unit": {
+            "description": "Unit code from the catalog, e.g. 'lb', 'dozen', 'fl_oz'",
+            "title": "Unit",
+            "type": "string"
+          }
+        },
+        "required": [
+          "product_id",
+          "quantity",
+          "unit"
+        ],
+        "title": "RequestLine",
+        "type": "object"
+      },
+      "SupplierOrder": {
+        "additionalProperties": false,
+        "properties": {
+          "allocations": {
+            "items": {
+              "$ref": "#/components/schemas/Allocation"
+            },
+            "title": "Allocations",
+            "type": "array"
+          },
+          "delivery_fee_cents": {
+            "description": "Fee actually charged (0 if waived)",
+            "title": "Delivery Fee Cents",
+            "type": "integer"
+          },
+          "fee_waived": {
+            "title": "Fee Waived",
+            "type": "boolean"
+          },
+          "free_delivery_threshold_cents": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Free Delivery Threshold Cents"
+          },
+          "items_subtotal_cents": {
+            "title": "Items Subtotal Cents",
+            "type": "integer"
+          },
+          "list_delivery_fee_cents": {
+            "title": "List Delivery Fee Cents",
+            "type": "integer"
+          },
+          "min_order_cents": {
+            "title": "Min Order Cents",
+            "type": "integer"
+          },
+          "order_by": {
+            "$ref": "#/components/schemas/OrderBy"
+          },
+          "supplier_id": {
+            "title": "Supplier Id",
+            "type": "string"
+          },
+          "supplier_name": {
+            "title": "Supplier Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "supplier_id",
+          "supplier_name",
+          "items_subtotal_cents",
+          "delivery_fee_cents",
+          "fee_waived",
+          "list_delivery_fee_cents",
+          "free_delivery_threshold_cents",
+          "min_order_cents",
+          "order_by",
+          "allocations"
+        ],
+        "title": "SupplierOrder",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "SupplyPilot Optimizer",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/v1/health": {
+      "get": {
+        "operationId": "health_v1_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health"
+      }
+    },
+    "/v1/optimize": {
+      "post": {
+        "description": "Find the lowest total delivered cost (items + delivery fees) for one buyer's basket.\n\nAn infeasible basket is a normal answer (status \"infeasible\" with `problems`), not an error.",
+        "operationId": "optimize_basket_v1_optimize_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OptimizeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OptimizeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Invalid request, or it refers to an unknown buyer, product, unit or zone"
+          }
+        },
+        "summary": "Optimize Basket"
+      }
+    }
+  }
+}

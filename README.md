@@ -11,10 +11,10 @@ distributors (prices, packs, stock, fees, minimums, delivery days) and explains 
 
 ## Status
 
-Milestone 1 (foundation) and Milestone 2 (shopping workflow: persistent cart, saved lists, CSV
-upload, delivery date, supplier preferences) are done. See [`docs/implementation-checklist.md`](docs/implementation-checklist.md).
-The price optimizer lands in Milestone 3; until then "Find My Best Price" is disabled
-rather than faked.
+Milestones 1 (foundation), 2 (shopping workflow: persistent cart, saved lists, CSV upload,
+delivery date, supplier preferences) and 3 (optimizer service, `POST /v1/optimize`) are done; see
+[`docs/implementation-checklist.md`](docs/implementation-checklist.md). The web app isn't wired to
+the optimizer yet (Milestone 4), so "Find My Best Price" stays disabled rather than faked.
 
 ## Run it locally
 
@@ -77,6 +77,7 @@ make test       # just unit tests
 cd apps/web && npm run test:db   # RLS + repository tests against local Supabase (make db-start)
 make e2e        # Playwright: the real app in Chromium against local Supabase
 make seed       # regenerate data/seed/demo_catalog.json after editing generate_seed.py
+make api-types  # regenerate docs/openapi.json + web TS types after changing optimizer models
 ```
 
 ## Repo map
