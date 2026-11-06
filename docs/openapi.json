@@ -784,6 +784,24 @@
       "post": {
         "description": "Find the lowest total delivered cost (items + delivery fees) for one buyer's basket.\n\nAn infeasible basket is a normal answer (status \"infeasible\" with `problems`), not an error.",
         "operationId": "optimize_basket_v1_optimize_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-api-key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -804,6 +822,12 @@
               }
             },
             "description": "Successful Response"
+          },
+          "401": {
+            "description": "OPTIMIZER_API_KEY is set and the X-API-Key header is missing or wrong"
+          },
+          "413": {
+            "description": "Request body too large"
           },
           "422": {
             "description": "Invalid request, or it refers to an unknown buyer, product, unit or zone"

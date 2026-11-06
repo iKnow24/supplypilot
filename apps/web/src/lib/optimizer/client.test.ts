@@ -68,6 +68,18 @@ describe("callOptimizer", () => {
     expect(seen).toEqual({ url: "http://opt:8000/v1/optimize", body: request });
   });
 
+  it("sends the shared API key when configured, and explains a 401", async () => {
+    let sent: string | null = null;
+    const fetchImpl = (async (_url: string, init: RequestInit) => {
+      sent = new Headers(init.headers).get("x-api-key");
+      return new Response("{}", { status: 401 });
+    }) as unknown as typeof fetch;
+    await expect(callOptimizer(request, { fetchImpl, apiKey: "k1" })).rejects.toThrow(
+      /OPTIMIZER_API_KEY/,
+    );
+    expect(sent).toBe("k1");
+  });
+
   it("accepts partial plans", async () => {
     const r = await callOptimizer(request, { fetchImpl: respond(200, { status: "partial" }) });
     expect(r.status).toBe("partial");

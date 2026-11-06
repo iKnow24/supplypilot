@@ -58,7 +58,13 @@ Tick only what works and is tested.
 - [x] POs are snapshots (names, SKUs, prices, address, cutoff); writes only via validated SQL
       functions; RLS per org (DB tests), CSV formula-injection guard
 
-## Milestone 6 — Polish
-- [ ] Accessibility pass (axe), keyboard walkthrough, mobile pass
-- [ ] Security basics (headers, input limits, RLS tests)
-- [ ] Deployment docs (Vercel + Python host + Supabase), demo script
+## Milestone 6 — Polish ✅
+- [x] Accessibility: axe WCAG 2.1 AA on all 11 screens (incl. a real result and PO), fixed the
+      issues found; keyboard-only walkthrough of the whole flow + focus-ring check; phone pass
+      (no sideways scroll, tab bar, total above the fold). All in e2e, run on the production build
+- [x] Security: per-request nonce CSP (no unsafe-*, no third-party origins) + static headers;
+      optimizer API key (constant-time) and 256 KB body limit; `make db-check` invariants (RLS
+      everywhere, nothing for anon, pinned search_path) in CI; locked down function grants
+- [x] Deployment: optimizer Dockerfile (non-root, smoke-tested in CI), docs/deployment.md
+      (Supabase + Vercel + Fly/Render/Railway, public-demo caveats, before-real-buyers list),
+      docs/demo-script.md

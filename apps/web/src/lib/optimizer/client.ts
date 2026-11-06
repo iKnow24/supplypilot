@@ -32,14 +32,23 @@ export function optimizerUrl(): string {
 
 export async function callOptimizer(
   request: OptimizeRequest,
-  opts: { url?: string; fetchImpl?: typeof fetch; timeoutMs?: number } = {},
+  opts: { url?: string; fetchImpl?: typeof fetch; timeoutMs?: number; apiKey?: string } = {},
 ): Promise<OptimizeResponse> {
-  const { url = optimizerUrl(), fetchImpl = fetch, timeoutMs = 20_000 } = opts;
+  const {
+    url = optimizerUrl(),
+    fetchImpl = fetch,
+    timeoutMs = 20_000,
+    apiKey = process.env.OPTIMIZER_API_KEY,
+  } = opts;
   let res: Response;
   try {
     res = await fetchImpl(`${url.replace(/\/+$/, "")}/v1/optimize`, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: {
+        "content-type": "application/json",
+        // Shared secret between the two servers (never sent to the browser).
+        ...(apiKey ? { "x-api-key": apiKey } : {}),
+      },
       body: JSON.stringify(request),
       signal: AbortSignal.timeout(timeoutMs),
       cache: "no-store",
@@ -51,6 +60,12 @@ export async function callOptimizer(
         ? "The price optimizer took too long to answer. Please try again."
         : "The price optimizer isn't reachable right now. Please try again in a moment.",
       "unavailable",
+    );
+  }
+  if (res.status === 401) {
+    throw new OptimizerError(
+      "The price optimizer refused this server's credentials (check OPTIMIZER_API_KEY).",
+      "failed",
     );
   }
   if (res.status === 422) {

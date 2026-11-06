@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import type { SupplierSummary } from "@/lib/catalog/repository";
-import { WEEKDAY_SHORT } from "@/lib/delivery";
+import { WEEKDAY_LONG, WEEKDAY_SHORT } from "@/lib/delivery";
 import { formatAge } from "@/lib/freshness";
 import { formatCents } from "@/lib/money";
 
@@ -61,10 +61,10 @@ export function SupplierCard({
         <dl className="mt-5 grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
           <div className="col-span-2">
             <dt className="text-muted-foreground">Delivery days</dt>
-            <dd
-              className="mt-1 flex gap-1"
-              aria-label={p.delivery_weekdays.map((d) => WEEKDAY_SHORT[d]).join(", ")}
-            >
+            <dd className="mt-1 flex gap-1">
+              <span className="sr-only">
+                {p.delivery_weekdays.map((d) => WEEKDAY_LONG[d]).join(", ")}
+              </span>
               {[1, 2, 3, 4, 5, 6, 7].map((d) => (
                 <span
                   key={d}
@@ -72,7 +72,7 @@ export function SupplierCard({
                   className={
                     p.delivery_weekdays.includes(d)
                       ? "bg-accent text-accent-foreground rounded-md px-1.5 py-0.5 text-xs font-medium"
-                      : "text-muted-foreground/60 rounded-md px-1.5 py-0.5 text-xs line-through"
+                      : "text-muted-foreground rounded-md px-1.5 py-0.5 text-xs line-through"
                   }
                 >
                   {WEEKDAY_SHORT[d]}

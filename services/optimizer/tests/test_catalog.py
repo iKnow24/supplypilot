@@ -4,12 +4,12 @@ from copy import deepcopy
 import pytest
 from pydantic import ValidationError
 
-from supplypilot_optimizer.catalog import DEFAULT_CATALOG_PATH, Catalog, load_catalog
+from supplypilot_optimizer.catalog import Catalog, catalog_path, load_catalog
 
 
 @pytest.fixture(scope="module")
 def raw() -> dict:
-    return json.loads(DEFAULT_CATALOG_PATH.read_text())
+    return json.loads(catalog_path().read_text())
 
 
 def test_seed_catalog_is_valid() -> None:
@@ -70,3 +70,12 @@ def test_unknown_fields_rejected(raw: dict) -> None:
     bad["suppliers"][0]["secret_rebate"] = 5
     with pytest.raises(ValidationError):
         Catalog.model_validate(bad)
+
+
+def test_catalog_path_prefers_the_env_var(monkeypatch, tmp_path) -> None:  # type: ignore[no-untyped-def]
+    from supplypilot_optimizer.catalog import catalog_path
+
+    monkeypatch.delenv("SUPPLYPILOT_CATALOG_PATH", raising=False)
+    assert catalog_path().name == "demo_catalog.json" and catalog_path().is_file()
+    monkeypatch.setenv("SUPPLYPILOT_CATALOG_PATH", str(tmp_path / "other.json"))
+    assert catalog_path() == tmp_path / "other.json"
