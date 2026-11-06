@@ -8,6 +8,7 @@
  * server actions (src/app/cart/actions.ts).
  */
 import type { OptimizeRequest, OptimizeResponse } from "../optimizer/types";
+import type { PurchaseOrder, PurchaseOrderDraft, PurchaseOrderSummary } from "../orders/types";
 
 export interface CartLine {
   product_id: string;
@@ -80,6 +81,15 @@ export interface BuyerStateRepository {
   saveRun(request: OptimizeRequest, response: OptimizeResponse): Promise<string>;
   getRun(id: string): Promise<OptimizationRun | null>;
   listRuns(limit?: number): Promise<OptimizationRunSummary[]>;
+
+  /** One draft PO per supplier for an approved run. Idempotent per (run, supplier). */
+  createPurchaseOrders(runId: string, drafts: PurchaseOrderDraft[]): Promise<string[]>;
+  listPurchaseOrders(opts?: { runId?: string; limit?: number }): Promise<PurchaseOrderSummary[]>;
+  getPurchaseOrder(id: string): Promise<PurchaseOrder | null>;
+  /** Draft -> Exported (first export time is kept). */
+  markPurchaseOrderExported(id: string): Promise<Date>;
+  /** Only drafts can be discarded; exported POs are permanent. */
+  discardDraftPurchaseOrder(id: string): Promise<boolean>;
 }
 
 /** An error whose message is safe and useful to show the buyer. */

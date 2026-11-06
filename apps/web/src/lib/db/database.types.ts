@@ -230,6 +230,145 @@ export type Database = {
           },
         ];
       };
+      purchase_order_lines: {
+        Row: {
+          id: string;
+          line_total_cents: number;
+          offer_id: string;
+          org_id: string;
+          pack_label: string;
+          pack_price_cents: number;
+          pack_quantity: string;
+          pack_unit: string;
+          packs: number;
+          po_id: string;
+          position: number;
+          price_basis: string;
+          product_id: string;
+          product_name: string;
+          requested_product_id: string;
+          supplier_sku: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          id?: string;
+          line_total_cents: number;
+          offer_id: string;
+          org_id: string;
+          pack_label: string;
+          pack_price_cents: number;
+          pack_quantity: string;
+          pack_unit: string;
+          packs: number;
+          po_id: string;
+          position: number;
+          price_basis: string;
+          product_id: string;
+          product_name: string;
+          requested_product_id: string;
+          supplier_sku: string;
+        };
+        Update: {
+          id?: string;
+          line_total_cents?: number;
+          offer_id?: string;
+          org_id?: string;
+          pack_label?: string;
+          pack_price_cents?: number;
+          pack_quantity?: string;
+          pack_unit?: string;
+          packs?: number;
+          po_id?: string;
+          position?: number;
+          price_basis?: string;
+          product_id?: string;
+          product_name?: string;
+          requested_product_id?: string;
+          supplier_sku?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "purchase_order_lines_po_id_org_id_fkey";
+            columns: ["po_id", "org_id"];
+            isOneToOne: false;
+            referencedRelation: "purchase_orders";
+            referencedColumns: ["id", "org_id"];
+          },
+        ];
+      };
+      purchase_orders: {
+        Row: {
+          created_at: string;
+          deliver_to: NonNullable<Json>;
+          delivery_date: string;
+          delivery_fee_cents: number;
+          exported_at: string | null;
+          id: string;
+          items_subtotal_cents: number;
+          number: string;
+          order_by_date: string;
+          order_by_time: string;
+          org_id: string;
+          run_id: string;
+          status: string;
+          supplier_id: string;
+          supplier_name: string;
+          total_cents: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          deliver_to: NonNullable<Json>;
+          delivery_date: string;
+          delivery_fee_cents: number;
+          exported_at?: string | null;
+          id?: string;
+          items_subtotal_cents: number;
+          number: string;
+          order_by_date: string;
+          order_by_time: string;
+          org_id: string;
+          run_id: string;
+          status?: string;
+          supplier_id: string;
+          supplier_name: string;
+          total_cents: number;
+        };
+        Update: {
+          created_at?: string;
+          deliver_to?: NonNullable<Json>;
+          delivery_date?: string;
+          delivery_fee_cents?: number;
+          exported_at?: string | null;
+          id?: string;
+          items_subtotal_cents?: number;
+          number?: string;
+          order_by_date?: string;
+          order_by_time?: string;
+          org_id?: string;
+          run_id?: string;
+          status?: string;
+          supplier_id?: string;
+          supplier_name?: string;
+          total_cents?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "purchase_orders_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "buyer_orgs";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "purchase_orders_run_id_org_id_fkey";
+            columns: ["run_id", "org_id"];
+            isOneToOne: false;
+            referencedRelation: "optimization_runs";
+            referencedColumns: ["id", "org_id"];
+          },
+        ];
+      };
       saved_list_lines: {
         Row: {
           current_supplier_id: string | null;
@@ -320,6 +459,10 @@ export type Database = {
         };
         Returns: boolean;
       };
+      create_purchase_orders: {
+        Args: { p_orders: Json; p_org: string; p_run: string };
+        Returns: string[];
+      };
       duplicate_list: {
         Args: { p_list_id: string; p_name: string; p_org: string };
         Returns: string;
@@ -345,6 +488,7 @@ export type Database = {
       };
       is_org_member: { Args: { target_org: string }; Returns: boolean };
       load_list_into_cart: { Args: { p_list_id: string; p_org: string }; Returns: undefined };
+      mark_po_exported: { Args: { p_org: string; p_po: string }; Returns: string };
       save_cart_as_list: { Args: { p_name: string; p_org: string }; Returns: string };
       set_cart_lines: {
         Args: { p_lines: Json; p_mode?: string; p_org: string };

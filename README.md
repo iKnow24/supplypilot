@@ -11,10 +11,11 @@ distributors (prices, packs, stock, fees, minimums, delivery days) and explains 
 
 ## Status
 
-Milestones 1–4 are done: foundation, shopping workflow (persistent cart, saved lists, CSV upload,
-delivery date, supplier preferences), the CP-SAT optimizer (`POST /v1/optimize`), and the
-recommendations UI ("Find My Best Price", results, alternatives, history). Next is M5, purchase
-orders. See [`docs/implementation-checklist.md`](docs/implementation-checklist.md).
+Milestones 1–5 are done: foundation, shopping workflow (persistent cart, saved lists, CSV upload,
+delivery date, supplier preferences), the CP-SAT optimizer (`POST /v1/optimize`), the
+recommendations UI ("Find My Best Price", results, alternatives, history), and purchase orders
+(approve, draft POs per supplier, CSV/PDF export, reorder). Next is M6, polish and deployment.
+See [`docs/implementation-checklist.md`](docs/implementation-checklist.md).
 
 ## Run it locally
 

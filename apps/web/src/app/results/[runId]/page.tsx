@@ -5,6 +5,8 @@ import { notFound } from "next/navigation";
 
 import { PageHeader } from "@/components/app/page-header";
 import { PersistenceNotice } from "@/components/app/persistence-notice";
+import { StatusProvider } from "@/components/cart/status";
+import { ApproveResult } from "@/components/orders/approve-result";
 import {
   AlternativesTable,
   ExcludedOffers,
@@ -34,11 +36,12 @@ export default async function ResultPage({ params }: PageProps<"/results/[runId]
     );
   }
   const repo = getRepository();
-  const [run, products, suppliers, source] = await Promise.all([
+  const [run, products, suppliers, source, pos] = await Promise.all([
     state.getRun(runId),
     repo.listProducts(),
     repo.listSuppliers(),
     repo.source(),
+    state.listPurchaseOrders({ runId }),
   ]);
   if (!run) notFound();
 
@@ -64,64 +67,87 @@ export default async function ResultPage({ params }: PageProps<"/results/[runId]
   });
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title={plan ? "Your best price" : "No price for this order"}
-        description={
+    <StatusProvider>
+      <div className="space-y-6">
+        <PageHeader
+          title={plan ? "Your best price" : "No price for this order"}
+          description={
+            <>
+              {run.lineCount} item{run.lineCount === 1 ? "" : "s"} for {buyer.locations[0]!.name},
+              delivered {formatDate(run.deliveryDate, "long")}. Calculated {ranAt}.
+            </>
+          }
+          actions={
+            <Button asChild variant="outline">
+              <Link href="/cart">
+                <ArrowLeft aria-hidden /> Back to cart
+              </Link>
+            </Button>
+          }
+        />
+
+        {plan ? (
           <>
-            {run.lineCount} item{run.lineCount === 1 ? "" : "s"} for {buyer.locations[0]!.name},
-            delivered {formatDate(run.deliveryDate, "long")}. Calculated {ranAt}.
-          </>
-        }
-        actions={
-          <Button asChild variant="outline">
-            <Link href="/cart">
-              <ArrowLeft aria-hidden /> Back to cart
-            </Link>
-          </Button>
-        }
-      />
-
-      {plan ? (
-        <>
-          <TotalHero
-            partial={r.status === "partial"}
-            plan={plan}
-            baseline={r.baseline}
-            savingsCents={r.savings_cents ?? null}
-            deliveryDate={run.deliveryDate}
-          />
-          {r.status === "partial" ? (
-            <ProblemsCard problems={r.problems} partial names={names} />
-          ) : null}
-          <div className="grid gap-6 lg:grid-cols-3">
-            <div className="space-y-6 lg:col-span-2">
-              {plan.suppliers.map((o) => (
-                <SupplierOrderCard
-                  key={o.supplier_id}
-                  order={o}
-                  names={names}
-                  requested={requested}
+            <TotalHero
+              partial={r.status === "partial"}
+              plan={plan}
+              baseline={r.baseline}
+              savingsCents={r.savings_cents ?? null}
+              deliveryDate={run.deliveryDate}
+            />
+            {r.status === "partial" ? (
+              <ProblemsCard problems={r.problems} partial names={names} />
+            ) : null}
+            <div className="grid gap-6 lg:grid-cols-3">
+              <div className="space-y-6 lg:col-span-2">
+                {plan.suppliers.map((o) => (
+                  <SupplierOrderCard
+                    key={o.supplier_id}
+                    order={o}
+                    names={names}
+                    requested={requested}
+                  />
+                ))}
+                <AlternativesTable alternatives={r.alternatives} best={plan} names={names} />
+              </div>
+              <div className="space-y-6">
+                <ApproveResult
+                  runId={run.id}
+                  suppliers={plan.suppliers.map((o) => ({
+                    name: o.supplier_name,
+                    totalCents: o.items_subtotal_cents + o.delivery_fee_cents,
+                  }))}
+                  existing={pos.map((po) => ({
+                    id: po.id,
+                    number: po.number,
+                    supplierName: po.supplier_name,
+                    totalCents: po.total_cents,
+                    status: po.status,
+                  }))}
+                  partialNote={
+                    r.status === "partial"
+                      ? "Items left out of this plan won't be on any purchase order."
+                      : null
+                  }
                 />
-              ))}
-              <AlternativesTable alternatives={r.alternatives} best={plan} names={names} />
+                <Explanations items={r.explanations} />
+                <QuantityCheck plan={plan} names={names} />
+              </div>
             </div>
-            <div className="space-y-6">
-              <Explanations items={r.explanations} />
-              <QuantityCheck plan={plan} names={names} />
-            </div>
-          </div>
-        </>
-      ) : (
-        <ProblemsCard problems={r.problems} names={names} />
-      )}
+          </>
+        ) : (
+          <ProblemsCard problems={r.problems} names={names} />
+        )}
 
-      <ExcludedOffers offers={r.excluded_offers} names={names} />
-      <p className="text-muted-foreground text-xs">
-        {r.data.synthetic ? `${r.data.label}. ` : ""}Prices and stock as of{" "}
-        {new Date(r.data.as_of).toLocaleString("en-US", { timeZone: source.timezone })}. Nothing has
-        been ordered.
-      </p>
-    </div>
+        <ExcludedOffers offers={r.excluded_offers} names={names} />
+        <p className="text-muted-foreground text-xs">
+          {r.data.synthetic ? `${r.data.label}. ` : ""}Prices and stock as of{" "}
+          {new Date(r.data.as_of).toLocaleString("en-US", { timeZone: source.timezone })}.
+          {pos.length
+            ? " Purchase orders are below; nothing is sent to suppliers."
+            : " Nothing has been ordered."}
+        </p>
+      </div>
+    </StatusProvider>
   );
 }

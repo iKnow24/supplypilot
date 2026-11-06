@@ -50,9 +50,13 @@ Tick only what works and is tested.
 - [x] Optimizer: partial plans — fill as many lines as possible, explain each one left out
       (brute-force check extended: 400 random baskets, full / partial / infeasible)
 
-## Milestone 5 — Purchase orders
-- [ ] Draft POs split by supplier; explicit approve step
-- [ ] CSV + PDF export; status Draft/Exported; history; duplicate/reorder
+## Milestone 5 — Purchase orders ✅
+- [x] Draft POs split by supplier; explicit approve step (confirm screen; idempotent per result)
+- [x] CSV + PDF export (pdf-lib, multi-page); status Draft/Exported only; exported POs are
+      permanent, drafts can be discarded; history on Orders and Home; reorder (one PO or a
+      whole result) back into the cart with the PO's supplier as the usual one
+- [x] POs are snapshots (names, SKUs, prices, address, cutoff); writes only via validated SQL
+      functions; RLS per org (DB tests), CSV formula-injection guard
 
 ## Milestone 6 — Polish
 - [ ] Accessibility pass (axe), keyboard walkthrough, mobile pass

@@ -6,50 +6,21 @@
  *  - re-validates ids, quantities and units against the catalog (the browser is untrusted),
  *  - returns a result the UI can show instead of throwing.
  */
-import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import {
-  BuyerStateError,
-  type BuyerStateRepository,
-  type CartLine,
-} from "@/lib/buyer-state/repository";
-import { catalogContext } from "@/lib/cart/catalog-context";
+import { runBuyerAction, str, type ActionResult } from "@/lib/actions/run";
+import { type CartLine } from "@/lib/buyer-state/repository";
 import { deliveryOptions, isBookableDate } from "@/lib/cart/delivery-options";
 import { copyName } from "@/lib/cart/names";
 import { validateAmount, validateLine, validateListName } from "@/lib/cart/validation";
 import { getRepository } from "@/lib/catalog/seed-repository";
 import { OptimizerError, callOptimizer } from "@/lib/optimizer/client";
 import { buildOptimizeRequest } from "@/lib/optimizer/request";
-import { getSession, persistenceProblem } from "@/lib/session";
+import { getSession } from "@/lib/session";
 
-export type ActionResult =
-  { ok: true; message?: string; runId?: string } | { ok: false; error: string };
+export type { ActionResult } from "@/lib/actions/run";
 
-type Ctx = Awaited<ReturnType<typeof catalogContext>> & { state: BuyerStateRepository };
-
-async function run(fn: (ctx: Ctx) => Promise<ActionResult | void>): Promise<ActionResult> {
-  const session = await getSession();
-  if (!session.state) return { ok: false, error: persistenceProblem(session.persistence)! };
-  try {
-    const result = (await fn({ ...(await catalogContext()), state: session.state })) ?? {
-      ok: true,
-    };
-    if (result.ok) {
-      revalidatePath("/cart");
-      revalidatePath("/lists");
-      revalidatePath("/");
-      revalidatePath("/results", "layout");
-    }
-    return result;
-  } catch (e) {
-    if (e instanceof BuyerStateError) return { ok: false, error: e.message };
-    console.error(e);
-    return { ok: false, error: "Something went wrong. Please try again." };
-  }
-}
-
-const str = (v: unknown) => (typeof v === "string" ? v : "");
+const run = runBuyerAction;
 
 // ------------------------------------------------------------------------------------- cart
 

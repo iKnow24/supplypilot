@@ -179,6 +179,124 @@ describe("optimization runs", () => {
   });
 });
 
+describe("purchase orders", () => {
+  const draft = (supplier: string, cents: number) => ({
+    supplier_id: supplier,
+    supplier_name: `${supplier} (Demo)`,
+    delivery_date: "2026-11-11",
+    order_by_date: "2026-11-10",
+    order_by_time: "18:00",
+    deliver_to: { buyer_name: "T", location_name: "L", address_label: "A", zone: "ORL-UCF" },
+    items_subtotal_cents: cents,
+    delivery_fee_cents: 1500,
+    lines: [
+      {
+        product_id: "prd_milk_whole",
+        product_name: "Whole milk",
+        requested_product_id: "prd_milk_whole",
+        offer_id: "ofr_x",
+        supplier_sku: "SKU-1",
+        packs: 2,
+        pack_label: "Case",
+        pack_quantity: "4",
+        pack_unit: "gal",
+        pack_price_cents: cents / 2,
+        price_basis: "list" as const,
+        line_total_cents: cents,
+      },
+    ],
+  });
+
+  async function newRun(repo: SupabaseBuyerStateRepository) {
+    return repo.saveRun(
+      {
+        buyer_id: A,
+        zone: "ORL-UCF",
+        delivery_date: "2026-11-11",
+        lines: [{ product_id: "prd_milk_whole", quantity: "8", unit: "gal" }],
+      } as never,
+      { status: "optimal", recommendation: { total_cents: 5500, supplier_count: 1 } } as never,
+    );
+  }
+
+  it("creates one draft per supplier, idempotently, with readable numbers", async () => {
+    const repo = new SupabaseBuyerStateRepository(a, A);
+    const run = await newRun(repo);
+    const ids = await repo.createPurchaseOrders(run, [
+      draft("sup_meadowlark", 4000),
+      draft("sup_kestrel", 2000),
+    ]);
+    expect(ids).toHaveLength(2);
+    // Approving the same result again creates nothing new.
+    expect(await repo.createPurchaseOrders(run, [draft("sup_meadowlark", 4000)])).toEqual(ids);
+    const list = await repo.listPurchaseOrders({ runId: run });
+    expect(list.map((p) => [p.status, p.total_cents, p.lineCount])).toEqual([
+      ["draft", 5500, 1],
+      ["draft", 3500, 1],
+    ]);
+    expect(list[0]!.number).toMatch(/^THI-\d{6}-\d{3}$/);
+    const po = await repo.getPurchaseOrder(list[0]!.id);
+    expect(po?.lines[0]).toMatchObject({ supplier_sku: "SKU-1", packs: 2, line_total_cents: 4000 });
+  });
+
+  it("rejects line totals that don't add up", async () => {
+    const repo = new SupabaseBuyerStateRepository(a, A);
+    const bad = draft("sup_meadowlark", 4000);
+    bad.items_subtotal_cents = 9999;
+    await expect(repo.createPurchaseOrders(await newRun(repo), [bad])).rejects.toThrow();
+  });
+
+  it("exported POs are permanent; drafts can be discarded", async () => {
+    const repo = new SupabaseBuyerStateRepository(a, A);
+    const [exported, draftId] = await repo.createPurchaseOrders(await newRun(repo), [
+      draft("sup_meadowlark", 4000),
+      draft("sup_kestrel", 2000),
+    ]);
+    const first = await repo.markPurchaseOrderExported(exported!);
+    const again = await repo.markPurchaseOrderExported(exported!);
+    expect(again.getTime()).toBe(first.getTime()); // first export time kept
+    expect(await repo.discardDraftPurchaseOrder(exported!)).toBe(false);
+    expect((await repo.getPurchaseOrder(exported!))?.status).toBe("exported");
+    expect(await repo.discardDraftPurchaseOrder(draftId!)).toBe(true);
+    expect(await repo.getPurchaseOrder(draftId!)).toBeNull();
+  });
+
+  it("buyers can't read, create, edit or export another org's POs", async () => {
+    const mine = new SupabaseBuyerStateRepository(a, A);
+    const [id] = await mine.createPurchaseOrders(await newRun(mine), [
+      draft("sup_meadowlark", 4000),
+    ]);
+    const theirs = new SupabaseBuyerStateRepository(b, B);
+    expect(await theirs.getPurchaseOrder(id!)).toBeNull();
+    const { data } = await b.from("purchase_order_lines").select("id").eq("po_id", id!);
+    expect(data).toEqual([]);
+    const exp = await b.rpc("mark_po_exported", { p_org: A, p_po: id! });
+    expect(exp.error?.code).toBe("42501");
+    const exp2 = await b.rpc("mark_po_exported", { p_org: B, p_po: id! });
+    expect(exp2.error?.code).toBe("P0002");
+    const upd = await a.from("purchase_orders").update({ total_cents: 1 }).eq("id", id!);
+    expect(upd.error?.code).toBe("42501"); // even the owner can't edit a PO directly
+    const ins = await a.from("purchase_order_lines").insert({
+      po_id: id!,
+      org_id: A,
+      position: 9,
+      product_id: "x",
+      product_name: "x",
+      requested_product_id: "x",
+      offer_id: "x",
+      supplier_sku: "x",
+      packs: 1,
+      pack_label: "x",
+      pack_quantity: "1",
+      pack_unit: "lb",
+      pack_price_cents: 1,
+      price_basis: "list",
+      line_total_cents: 1,
+    });
+    expect(ins.error?.code).toBe("42501");
+  });
+});
+
 describe("SupabaseBuyerStateRepository", () => {
   it("round-trips a cart: replace, merge, update, remove, baseline", async () => {
     const repo = new SupabaseBuyerStateRepository(a, A);

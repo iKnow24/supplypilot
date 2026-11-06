@@ -16,11 +16,12 @@ import { baselineSuppliers, greeting } from "@/lib/view";
 export default async function HomePage() {
   const repo = getRepository();
   const { buyer, persistence, state } = await getSession();
-  const [source, lists, suppliers, runs] = await Promise.all([
+  const [source, lists, suppliers, runs, orders] = await Promise.all([
     repo.source(),
     state ? state.listSavedLists() : Promise.resolve([]),
     repo.listSuppliers(),
     state ? state.listRuns(20) : Promise.resolve([]),
+    state ? state.listPurchaseOrders({ limit: 4 }) : Promise.resolve([]),
   ]);
   const saved = runs.find((r) => r.savingsCents !== null && r.savingsCents > 0);
   const zone = buyer.locations[0]!.zone;
@@ -137,9 +138,38 @@ export default async function HomePage() {
           <h2 id="recent" className="mb-3 text-lg font-semibold">
             Recent orders
           </h2>
-          <EmptyState icon={Package} title="No purchase orders yet">
-            When you approve a recommendation, draft purchase orders for each supplier show up here.
-          </EmptyState>
+          {orders.length === 0 ? (
+            <EmptyState icon={Package} title="No purchase orders yet">
+              When you approve a recommendation, draft purchase orders for each supplier show up
+              here.
+            </EmptyState>
+          ) : (
+            <Card>
+              <CardContent className="pt-2">
+                <ul className="divide-y text-sm">
+                  {orders.map((po) => (
+                    <li key={po.id} className="flex items-center justify-between gap-3 py-3">
+                      <div>
+                        <Link href={`/orders/${po.id}`} className="font-medium hover:underline">
+                          {po.number}
+                        </Link>
+                        <p className="text-muted-foreground text-xs">
+                          {po.supplier_name.replace(" (Demo)", "")} · delivery{" "}
+                          {formatDate(po.delivery_date)}
+                        </p>
+                      </div>
+                      <span className="flex items-center gap-2">
+                        <span className="tabular">{formatCents(po.total_cents)}</span>
+                        <Badge variant={po.status === "exported" ? "success" : "neutral"}>
+                          {po.status === "exported" ? "Exported" : "Draft"}
+                        </Badge>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
         </section>
         <section aria-labelledby="deliveries">
           <h2 id="deliveries" className="mb-3 text-lg font-semibold">

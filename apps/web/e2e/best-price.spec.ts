@@ -1,30 +1,9 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
-import { actAs, loadList, pickDate, toast } from "./helpers";
+import { actAs, findBestPrice, loadList, pickDate, replaceCartWithCsv, toast } from "./helpers";
 
 // These run the real optimizer service. The synthetic catalog's clock is fixed
 // (Thu Nov 5 2026, 9 AM Orlando), so prices, dates and totals are stable.
-
-async function replaceCartWithCsv(page: Page, csv: string) {
-  // networkidle: let React hydrate first, or the file input's change event is lost.
-  await page.goto("/cart", { waitUntil: "networkidle" });
-  await page.getByLabel("Choose CSV file").setInputFiles({
-    name: "order.csv",
-    mimeType: "text/csv",
-    buffer: Buffer.from(csv),
-  });
-  await expect(page.getByText(/\d+\s*rows? ready/)).toBeVisible();
-  // Empty cart: "Import N items"; otherwise replace what's there.
-  await page
-    .getByRole("button", { name: /^(Replace cart with these \d+|Import \d+ items?)$/ })
-    .click();
-  await expect(toast(page)).toContainText("Imported");
-}
-
-async function findBestPrice(page: Page) {
-  await page.getByRole("button", { name: "Find My Best Price" }).click();
-  await expect(page).toHaveURL(/\/results\/[0-9a-f-]{36}$/, { timeout: 30_000 });
-}
 
 test("cheapest items aren't the cheapest basket: plan, reasons and alternatives", async ({
   page,
