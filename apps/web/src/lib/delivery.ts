@@ -105,3 +105,10 @@ export function formatDate(date: string, style: "short" | "long" = "short"): str
     day: "numeric",
   });
 }
+
+/** "14:00" -> "2 PM", "09:30" -> "9:30 AM". */
+export function formatTime(hhmm: string): string {
+  const [h = 0, m = 0] = hhmm.split(":").map(Number);
+  const hour = h % 12 === 0 ? 12 : h % 12;
+  return `${hour}${m ? `:${String(m).padStart(2, "0")}` : ""} ${h < 12 ? "AM" : "PM"}`;
+}

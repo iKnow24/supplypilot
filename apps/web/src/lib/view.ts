@@ -1,5 +1,4 @@
 /** Small view-model helpers shared by server pages. */
-import type { SavedList } from "./catalog/schema";
 import type { SupplierSummary } from "./catalog/repository";
 
 export function greeting(now: Date, timeZone: string): string {
@@ -12,7 +11,12 @@ export function greeting(now: Date, timeZone: string): string {
 }
 
 /** Distinct suppliers a saved list currently buys from (the buyer's baseline habit). */
-export function baselineSuppliers(list: SavedList, suppliers: SupplierSummary[]) {
-  const ids = [...new Set(list.lines.map((l) => l.current_supplier_id).filter(Boolean))];
-  return ids.map((id) => suppliers.find((s) => s.id === id)?.short_name ?? id);
+export function baselineSuppliers(
+  list: { lines: { current_supplier_id: string | null }[] },
+  suppliers: SupplierSummary[],
+) {
+  const ids = [
+    ...new Set(list.lines.flatMap((l) => (l.current_supplier_id ? [l.current_supplier_id] : []))),
+  ];
+  return ids.map((id): string => suppliers.find((s) => s.id === id)?.short_name ?? id);
 }

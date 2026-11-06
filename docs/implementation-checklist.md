@@ -14,13 +14,18 @@ Tick only what works and is tested.
 - [x] Demo buyer switcher (cookie), demo-data banner, responsive nav (bottom tabs on mobile)
 - [x] Lint, typecheck, format, unit/component tests, production build, CI workflow
 
-## Milestone 2 — Shopping workflow
-- [ ] Persistence decision implemented (Supabase local or SQLite) behind repository interface
-- [ ] Cart: product search (keyboard friendly), add/remove, quantity + unit editor with validation
-- [ ] Save / duplicate saved lists; favorites
-- [ ] CSV upload: template download, parse, per-row errors (unknown product, bad unit, bad qty)
-- [ ] Delivery date picker (shows which suppliers can deliver), supplier preferences/exclusions
-- [ ] Playwright e2e: load list -> edit -> set date
+## Milestone 2 — Shopping workflow ✅
+- [x] Persistence: Supabase Postgres (local via `make db-start`) behind `BuyerStateRepository`;
+      migrations, RLS per buyer org, demo auth users, generated DB types; RLS integration tests
+- [x] Cart: product search (keyboard: `/`, ↑/↓, Enter, Esc), add/remove, quantity + unit editor
+      with validation (decimals, whole items for count units, unit must fit the product)
+- [x] Save / duplicate / rename / delete saved lists; favorites
+- [x] CSV upload: template download, parse, per-row errors (unknown product, bad unit, bad qty,
+      duplicates), blank quantity = skip, merge or replace
+- [x] Delivery date picker (which suppliers can deliver each day, and why not), supplier
+      preferences/exclusions
+- [x] Playwright e2e: load list -> edit -> set date (+ CSV, saved lists, tenant isolation); CI job
+      runs DB tests and e2e against local Supabase
 
 ## Milestone 3 — Optimizer
 - [ ] `POST /v1/optimize` request/response schemas (Pydantic) + generated TS types

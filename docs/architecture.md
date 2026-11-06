@@ -56,12 +56,26 @@ authoritatively in Python in M3 (with the same test cases).
 
 ## Persistence and auth (honest status)
 
-- **M1: no persistence.** The seed repository is read-only. Nothing a user does is saved.
-- **Demo auth:** a cookie picks one of three fictional buyers. It is not security.
-- **Plan:** Supabase Postgres with migrations + RLS keyed on buyer organization, and Supabase
-  Auth. A `SupabaseCatalogRepository` implements the same `CatalogRepository` interface, so
-  pages don't change. For carts/orders a local fallback (SQLite or local Postgres via
-  `supabase start`) will be documented; we will not silently pretend in-memory data persists.
+- **Catalog: still the seed file.** Suppliers, products, offers, prices and units are read from
+  `data/seed/demo_catalog.json` through `CatalogRepository`, the same file the optimizer reads. It
+  moves to Postgres only when real distributor catalogs arrive.
+- **Buyer state: Postgres (M2).** Carts, cart lines, saved lists, favorites and supplier
+  preferences are in Supabase Postgres (`supabase/migrations/`), behind `BuyerStateRepository`
+  (`apps/web/src/lib/buyer-state/`). Ids that point into the catalog are text and are validated by
+  the server actions on every write.
+- **Tenancy is enforced by Postgres.** Every row carries `org_id`; RLS allows it only to members of
+  that org (`org_members`); child rows use composite foreign keys `(parent_id, org_id)`, so a line
+  can't be attached to another org's cart. Multi-row operations (load list, CSV replace, save as
+  list) are `SECURITY INVOKER` SQL functions, so they're atomic and still subject to RLS. Anonymous
+  users can read nothing. `apps/web/src/lib/buyer-state/rls.db.test.ts` proves this against a real
+  database.
+- **Demo auth (still not real sign-in).** One Supabase Auth user per fictional buyer, created by
+  `supabase/seed.sql`. With `DEMO_AUTH=on`, `src/proxy.ts` signs a visitor in as the buyer picked in
+  the switcher; switching signs out and back in, then does a full page load so no cached page of the
+  previous buyer survives. Real sign-in (magic link) replaces this before any real buyer.
+- **No database? Say so.** Without Supabase configured, pages render read-only from the seed and show
+  why nothing can be saved. We never pretend in-memory data persists.
+- The web app only ever uses the publishable key; the service-role key is not used anywhere.
 
 ## Request flow (from M3/M4)
 
@@ -86,7 +100,8 @@ The browser never calls the optimizer directly, and never sees other buyers' pri
 Implemented now (in the seed contract): BuyerOrganization, BuyerLocation, Supplier,
 SupplierDeliveryPolicy, Product, ProductEquivalence, SupplierOffer (with pack = variant),
 InventorySnapshot, CatalogImport, saved lists (Cart templates).
-Later milestones: User, Cart/CartLine (M2), OptimizationRun/Recommendation/RecommendationLine
+Since M2 (Postgres): User (Supabase Auth), org membership, Cart/CartLine, saved lists, favorites.
+Later milestones: OptimizationRun/Recommendation/RecommendationLine
 (M3-4), PurchaseOrder/PurchaseOrderLine/ExportArtifact (M5).
 
 Supplier-facing features (a distributor portal) will live in their own route group and

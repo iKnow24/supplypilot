@@ -15,5 +15,7 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],
     css: false,
+    // e2e/ is Playwright; *.db.test.ts need a running database (npm run test:db).
+    exclude: ["node_modules/**", "e2e/**", "src/**/*.db.test.ts"],
   },
 });
