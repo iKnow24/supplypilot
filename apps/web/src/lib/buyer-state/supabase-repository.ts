@@ -2,6 +2,13 @@ import type { PostgrestError } from "@supabase/supabase-js";
 
 import type { Json } from "../db/database.types";
 import type { OptimizeRequest, OptimizeResponse } from "../optimizer/types";
+import type {
+  DeliverTo,
+  PurchaseOrder,
+  PurchaseOrderDraft,
+  PurchaseOrderLineDraft,
+  PurchaseOrderSummary,
+} from "../orders/types";
 import type { DbClient } from "../supabase/server";
 import {
   BuyerStateError,
@@ -26,6 +33,48 @@ type RunSummaryRow = {
   supplier_count: number | null;
   line_count: number;
 };
+
+const PO_COLUMNS =
+  "id, run_id, number, supplier_id, supplier_name, status, delivery_date, order_by_date, order_by_time, items_subtotal_cents, delivery_fee_cents, total_cents, created_at, exported_at";
+
+type PoRow = {
+  id: string;
+  run_id: string;
+  number: string;
+  supplier_id: string;
+  supplier_name: string;
+  status: string;
+  delivery_date: string;
+  order_by_date: string;
+  order_by_time: string;
+  items_subtotal_cents: number;
+  delivery_fee_cents: number;
+  total_cents: number;
+  created_at: string;
+  exported_at: string | null;
+};
+
+function toPoSummary(r: PoRow, lineCount: number): PurchaseOrderSummary {
+  return {
+    id: r.id,
+    runId: r.run_id,
+    number: r.number,
+    supplier_id: r.supplier_id,
+    supplier_name: r.supplier_name,
+    status: r.status === "exported" ? "exported" : "draft",
+    delivery_date: r.delivery_date,
+    order_by_date: r.order_by_date,
+    order_by_time: r.order_by_time,
+    items_subtotal_cents: r.items_subtotal_cents,
+    delivery_fee_cents: r.delivery_fee_cents,
+    total_cents: r.total_cents,
+    createdAt: new Date(r.created_at),
+    exportedAt: r.exported_at ? new Date(r.exported_at) : null,
+    lineCount,
+  };
+}
+
+const UUID = /^[0-9a-f-]{36}$/i;
 
 function toRunSummary(r: RunSummaryRow): OptimizationRunSummary {
   return {
@@ -298,5 +347,111 @@ export class SupabaseBuyerStateRepository implements BuyerStateRepository {
       .limit(limit);
     if (error) fail(error, "load past results");
     return data.map(toRunSummary);
+  }
+
+  async createPurchaseOrders(runId: string, drafts: PurchaseOrderDraft[]) {
+    const { data, error } = await this.db.rpc("create_purchase_orders", {
+      p_org: this.orgId,
+      p_run: runId,
+      p_orders: drafts as unknown as NonNullable<Json>,
+    });
+    if (error) {
+      if (error.code === "P0002")
+        throw new BuyerStateError("That result has no plan to order from");
+      fail(error, "create the purchase orders");
+    }
+    return (data ?? []) as string[];
+  }
+
+  async listPurchaseOrders(opts: { runId?: string; limit?: number } = {}) {
+    let q = this.db
+      .from("purchase_orders")
+      .select(`${PO_COLUMNS}, purchase_order_lines(count)`)
+      .eq("org_id", this.orgId)
+      .order("created_at", { ascending: false })
+      .order("number")
+      .limit(opts.limit ?? 50);
+    if (opts.runId) {
+      if (!UUID.test(opts.runId)) return [];
+      q = q.eq("run_id", opts.runId);
+    }
+    const { data, error } = await q;
+    if (error) fail(error, "load purchase orders");
+    return data.map((r) => {
+      const counted = r.purchase_order_lines as unknown as { count: number }[];
+      return toPoSummary(r, counted[0]?.count ?? 0);
+    });
+  }
+
+  async getPurchaseOrder(id: string): Promise<PurchaseOrder | null> {
+    if (!UUID.test(id)) return null;
+    const { data, error } = await this.db
+      .from("purchase_orders")
+      .select(
+        `${PO_COLUMNS}, deliver_to, purchase_order_lines(product_id, product_name, requested_product_id, offer_id, supplier_sku, packs, pack_label, pack_quantity, pack_unit, pack_price_cents, price_basis, line_total_cents, position)`,
+      )
+      .eq("org_id", this.orgId)
+      .eq("id", id)
+      .order("position", { referencedTable: "purchase_order_lines" })
+      .maybeSingle();
+    if (error) fail(error, "load that purchase order");
+    if (!data) return null;
+    const lines = [...data.purchase_order_lines]
+      .sort((x, y) => x.position - y.position)
+      .map((l): PurchaseOrderLineDraft => ({
+        product_id: l.product_id,
+        product_name: l.product_name,
+        requested_product_id: l.requested_product_id,
+        offer_id: l.offer_id,
+        supplier_sku: l.supplier_sku,
+        packs: l.packs,
+        pack_label: l.pack_label,
+        pack_quantity: l.pack_quantity,
+        pack_unit: l.pack_unit,
+        pack_price_cents: l.pack_price_cents,
+        price_basis: l.price_basis as PurchaseOrderLineDraft["price_basis"],
+        line_total_cents: l.line_total_cents,
+      }));
+    const summary = toPoSummary(data, lines.length);
+    return {
+      id: summary.id,
+      runId: summary.runId,
+      number: summary.number,
+      supplier_id: summary.supplier_id,
+      supplier_name: summary.supplier_name,
+      status: summary.status,
+      delivery_date: summary.delivery_date,
+      order_by_date: summary.order_by_date,
+      order_by_time: summary.order_by_time,
+      items_subtotal_cents: summary.items_subtotal_cents,
+      delivery_fee_cents: summary.delivery_fee_cents,
+      total_cents: summary.total_cents,
+      createdAt: summary.createdAt,
+      exportedAt: summary.exportedAt,
+      deliver_to: data.deliver_to as unknown as DeliverTo,
+      lines,
+    };
+  }
+
+  async markPurchaseOrderExported(id: string) {
+    const { data, error } = await this.db.rpc("mark_po_exported", { p_org: this.orgId, p_po: id });
+    if (error) {
+      if (error.code === "P0002") throw new BuyerStateError("That purchase order no longer exists");
+      fail(error, "mark the purchase order exported");
+    }
+    return new Date(data);
+  }
+
+  async discardDraftPurchaseOrder(id: string) {
+    if (!UUID.test(id)) return false;
+    const { data, error } = await this.db
+      .from("purchase_orders")
+      .delete()
+      .eq("org_id", this.orgId)
+      .eq("id", id)
+      .eq("status", "draft")
+      .select("id");
+    if (error) fail(error, "discard the draft");
+    return data.length > 0;
   }
 }

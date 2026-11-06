@@ -36,3 +36,24 @@ export function toast(page: Page) {
 export async function pickDate(page: Page, accessibleName: RegExp) {
   await page.locator("label", { has: page.getByRole("radio", { name: accessibleName }) }).click();
 }
+
+export async function replaceCartWithCsv(page: Page, csv: string) {
+  // networkidle: let React hydrate first, or the file input's change event is lost.
+  await page.goto("/cart", { waitUntil: "networkidle" });
+  await page.getByLabel("Choose CSV file").setInputFiles({
+    name: "order.csv",
+    mimeType: "text/csv",
+    buffer: Buffer.from(csv),
+  });
+  await expect(page.getByText(/\d+\s*rows? ready/)).toBeVisible();
+  // Empty cart: "Import N items"; otherwise replace what's there.
+  await page
+    .getByRole("button", { name: /^(Replace cart with these \d+|Import \d+ items?)$/ })
+    .click();
+  await expect(toast(page)).toContainText("Imported");
+}
+
+export async function findBestPrice(page: Page) {
+  await page.getByRole("button", { name: "Find My Best Price" }).click();
+  await expect(page).toHaveURL(/\/results\/[0-9a-f-]{36}$/, { timeout: 30_000 });
+}

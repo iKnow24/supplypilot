@@ -93,6 +93,23 @@ Browser -> server action findBestPrice()
 - Optimizer down, slow (20 s timeout) or rejecting the request -> a plain error toast; nothing is
   stored. Partial and infeasible answers are stored: "why can't I get this?" is worth keeping.
 
+## Purchase orders (M5)
+
+```
+/results/{run}  "Approve plan" -> confirm -> approveResult(run)
+                   builds one draft per supplier from the STORED result + catalog snapshot
+                   -> create_purchase_orders(org, run, drafts)   (SQL, atomic, idempotent)
+/orders/{po}    Download PDF/CSV -> exportPurchaseOrder(po) marks Exported (first time kept)
+                   -> browser downloads GET /orders/{po}/export?format=pdf|csv (read-only)
+                Reorder -> cart replaced with packs x pack size, usual supplier = PO's supplier
+```
+- Status is only Draft or Exported. Exported POs can't be changed or discarded; drafts can be
+  discarded. Lines are never edited: change the cart and run again.
+- Buyers can't insert or update POs directly (grants revoked); only the two SQL functions write,
+  and they check membership, that the run belongs to the org and has a plan, and that line totals
+  add up. Reads and draft deletes are plain RLS.
+- SupplyPilot never sends a PO anywhere. Export is the only outbound path.
+
 ## Extension points (designed, not built)
 
 - **Delivery-aware bundling (B):** `DeliveryPolicy` is per supplier today. Route schedules,
