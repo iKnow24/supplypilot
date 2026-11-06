@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, Package, ShoppingCart, Truck } from "lucide-react";
+import { ClipboardList, Home, Package, ShoppingCart, Truck } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 export const NAV_ITEMS = [
   { href: "/", label: "Home", icon: Home },
   { href: "/cart", label: "Smart Cart", icon: ShoppingCart },
+  { href: "/lists", label: "Lists", icon: ClipboardList },
   { href: "/orders", label: "Orders", icon: Package },
   { href: "/suppliers", label: "Suppliers", icon: Truck },
 ] as const;
@@ -55,7 +56,7 @@ export function MobileTabBar() {
       aria-label="Main"
       className="bg-card/95 fixed inset-x-0 bottom-0 z-40 border-t pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
     >
-      <ul className="grid grid-cols-4">
+      <ul className="grid grid-cols-5">
         {NAV_ITEMS.map((item) => {
           const active = isActive(pathname, item.href);
           const Icon = item.icon;

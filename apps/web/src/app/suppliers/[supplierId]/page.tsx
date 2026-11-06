@@ -19,7 +19,7 @@ import { getRepository } from "@/lib/catalog/seed-repository";
 import { WEEKDAY_SHORT } from "@/lib/delivery";
 import { FRESHNESS_LABEL, formatAge } from "@/lib/freshness";
 import { formatCents, formatUnitPrice } from "@/lib/money";
-import { getCurrentBuyer } from "@/lib/demo-session";
+import { getCurrentBuyer } from "@/lib/session";
 import { UnitTable, unitShortLabel } from "@/lib/units";
 
 export async function generateMetadata({

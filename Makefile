@@ -1,4 +1,4 @@
-.PHONY: setup dev web optimizer test lint seed check db-start db-stop db-reset db-status
+.PHONY: setup dev web optimizer test lint seed check db-start db-stop db-reset db-status db-env db-types db-doctor e2e
 
 setup:            ## Install everything
 	cd apps/web && npm install
@@ -29,14 +29,29 @@ check: lint test  ## Everything CI runs
 # Local Supabase (Postgres + Auth + REST) in Docker. Needs a running Docker engine (OrbStack).
 SUPABASE := apps/web/node_modules/.bin/supabase --workdir .
 
-db-start:         ## Start local Supabase; prints URLs and local keys
+db-start:         ## Start local Supabase, then write apps/web/.env.local
 	$(SUPABASE) start
+	$(MAKE) db-env
+
+db-env:           ## Write local Supabase URL/key + DEMO_AUTH=on into apps/web/.env.local
+	$(SUPABASE) status -o env | node apps/web/scripts/write-local-env.mjs apps/web/.env.local
 
 db-stop:          ## Stop it (data is kept in a Docker volume)
 	$(SUPABASE) stop
 
 db-reset:         ## Wipe local DB, re-run supabase/migrations + seed
+	python3 supabase/generate_seed_sql.py
 	$(SUPABASE) db reset
+
+db-doctor:        ## Check the Docker VM clock (sign-in breaks if it drifts after sleep)
+	@sh supabase/doctor.sh
+
+db-types:         ## Regenerate apps/web/src/lib/db/database.types.ts from the local schema
+	$(SUPABASE) gen types typescript --local --schema public > apps/web/src/lib/db/database.types.ts
+	cd apps/web && npx prettier --write src/lib/db/database.types.ts
+
+e2e:              ## Playwright end-to-end tests (needs make db-start)
+	cd apps/web && npm run test:e2e
 
 db-status:        ## Show URLs and local keys again
 	$(SUPABASE) status

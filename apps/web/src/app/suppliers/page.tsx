@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { PageHeader } from "@/components/app/page-header";
 import { SupplierCard } from "@/components/app/supplier-card";
 import { getRepository } from "@/lib/catalog/seed-repository";
-import { getCurrentBuyer } from "@/lib/demo-session";
+import { getCurrentBuyer } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Suppliers" };
 
