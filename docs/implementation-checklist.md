@@ -42,10 +42,13 @@ Tick only what works and is tested.
 - [x] Tests: all 8 scenarios as business assertions + brute-force cross-check on 228 random
       small baskets (60 feasible), eligibility/pricing, API
 
-## Milestone 4 — Recommendations UI
-- [ ] Wire "Find My Best Price" via server action; loading/error/infeasible states
-- [ ] Hero total, per-supplier breakdown, fees/minimums/overbuy, rationale, alternatives table
-- [ ] Optimization run history
+## Milestone 4 — Recommendations UI ✅
+- [x] Wire "Find My Best Price" via server action (cart read from Postgres, never the browser);
+      loading, error (optimizer down / timeout / rejected), partial and infeasible states
+- [x] Hero total, per-supplier breakdown, fees/minimums/overbuy, rationale, alternatives table
+- [x] Optimization run history (append-only, RLS per org) + latest verified savings on Home
+- [x] Optimizer: partial plans — fill as many lines as possible, explain each one left out
+      (brute-force check extended: 400 random baskets, full / partial / infeasible)
 
 ## Milestone 5 — Purchase orders
 - [ ] Draft POs split by supplier; explicit approve step

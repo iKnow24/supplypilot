@@ -1,5 +1,6 @@
-import { ClipboardList, Info, ShoppingCart } from "lucide-react";
+import { ClipboardList, ShoppingCart } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { EmptyState } from "@/components/app/empty-state";
 import { PageHeader } from "@/components/app/page-header";
@@ -7,6 +8,7 @@ import { PersistenceNotice } from "@/components/app/persistence-notice";
 import { CartToolbar } from "@/components/cart/cart-toolbar";
 import { CartWorkspace } from "@/components/cart/cart-workspace";
 import { CsvImport } from "@/components/cart/csv-import";
+import { FindBestPriceButton } from "@/components/cart/find-best-price-button";
 import { DeliveryDatePicker, type DateOptionView } from "@/components/cart/delivery-date-picker";
 import { StatusProvider } from "@/components/cart/status";
 import { SupplierPreferences } from "@/components/cart/supplier-preferences";
@@ -17,6 +19,7 @@ import { deliveryOptions } from "@/lib/cart/delivery-options";
 import { copyName } from "@/lib/cart/names";
 import { getRepository } from "@/lib/catalog/seed-repository";
 import { formatDate, formatTime } from "@/lib/delivery";
+import { formatCents } from "@/lib/money";
 import { getSession } from "@/lib/session";
 
 import { loadSavedListAndOpen } from "./actions";
@@ -48,11 +51,13 @@ export default async function CartPage({ searchParams }: PageProps<"/cart">) {
     );
   }
 
-  const [cart, favorites, lists] = await Promise.all([
+  const [cart, favorites, lists, runs] = await Promise.all([
     state.getCart(),
     state.listFavorites(),
     state.listSavedLists(),
+    state.listRuns(1),
   ]);
+  const lastRun = runs[0];
   const location = buyer.locations[0]!;
   const supplierNames = Object.fromEntries(suppliers.map((s) => [s.id, s.short_name]));
   const excluded = new Set(cart.excludedSupplierIds);
@@ -200,14 +205,30 @@ export default async function CartPage({ searchParams }: PageProps<"/cart">) {
                   <dd className="text-right font-medium">{baseline ? baseline.name : "None"}</dd>
                 </div>
               </dl>
-              <Button size="lg" className="w-full" disabled aria-describedby="optimizer-note">
-                Find My Best Price
-              </Button>
-              <p id="optimizer-note" className="text-muted-foreground flex gap-2 text-xs">
-                <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-                The price optimizer isn&apos;t connected in this build yet. We won&apos;t show a
-                price until it is calculated for real.
-              </p>
+              <FindBestPriceButton
+                blockedReason={
+                  cart.lines.length === 0
+                    ? "Add something to your cart first."
+                    : !selected
+                      ? "Pick a delivery date to compare prices."
+                      : null
+                }
+              />
+              {lastRun ? (
+                <p className="text-muted-foreground text-xs">
+                  Last result:{" "}
+                  <Link href={`/results/${lastRun.id}`} className="text-foreground underline">
+                    {lastRun.totalCents !== null
+                      ? formatCents(lastRun.totalCents)
+                      : "couldn't be built"}{" "}
+                    for {formatDate(lastRun.deliveryDate)}
+                  </Link>{" "}
+                  ·{" "}
+                  <Link href="/results" className="underline">
+                    All results
+                  </Link>
+                </p>
+              ) : null}
             </CardContent>
           </Card>
 

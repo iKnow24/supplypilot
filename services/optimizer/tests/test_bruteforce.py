@@ -9,6 +9,8 @@ re-implemented here independently, straight from the business rules:
   * we never buy more packs than covering the line needs, except to reach a volume tier
   * a used supplier's item subtotal must reach its minimum order
   * its delivery fee is charged unless the subtotal reaches the free-delivery threshold
+  * a line that isn't fully covered is left out and buys nothing; the best plan fills as many
+    lines as possible, then has the lowest total (a "partial" plan when some are left out)
 """
 
 from __future__ import annotations
@@ -36,21 +38,25 @@ def _price(c: Candidate, packs: int) -> int:
     return min(s.price_cents for s in c.schedule if s.min_packs <= packs)
 
 
-def brute_force(candidates: list[Candidate], need: list[Fraction]) -> int | None:
+def brute_force(candidates: list[Candidate], need: list[Fraction]) -> tuple[int, int] | None:
+    """(lines left out, total cents) of the best plan, or None if no line can be filled."""
     options: list[list[int]] = []
     for c in candidates:
         top = max(max(s.min_packs for s in c.schedule), c.min_packs, math.ceil(need[c.line_index] / c.pack_base))
         options.append([0, *range(c.min_packs, min(c.stock_packs, top) + 1)])
     if math.prod(len(o) for o in options) > MAX_COMBOS:
         raise TooBig
-    best: int | None = None
+    best: tuple[int, int] | None = None
     for combo in itertools.product(*options):
         covered = [Fraction(0)] * len(need)
+        bought = [0] * len(need)
         per_offer: dict[str, int] = {}
         for c, k in zip(candidates, combo, strict=True):
             covered[c.line_index] += k * c.pack_base
+            bought[c.line_index] += k
             per_offer[c.offer.id] = per_offer.get(c.offer.id, 0) + k
-        if any(cov < n for cov, n in zip(covered, need, strict=True)):
+        left_out = [i for i, (cov, n) in enumerate(zip(covered, need, strict=True)) if cov < n]
+        if any(bought[i] for i in left_out) or len(left_out) == len(need):
             continue
         if any(per_offer[c.offer.id] > c.stock_packs for c in candidates):
             continue
@@ -67,8 +73,8 @@ def brute_force(candidates: list[Candidate], need: list[Fraction]) -> int | None
                 break
             free = policy.free_delivery_threshold_cents is not None and items >= policy.free_delivery_threshold_cents
             total += items + (0 if free else policy.delivery_fee_cents)
-        if ok and (best is None or total < best):
-            best = total
+        if ok and (best is None or (len(left_out), total) < best):
+            best = (len(left_out), total)
     return best
 
 
@@ -77,7 +83,7 @@ def test_solver_matches_brute_force_on_random_baskets(catalog: Catalog) -> None:
     units = {u.code: u for u in catalog.units}
     start = date.fromisoformat("2026-11-06")
     now = now_for(catalog)
-    compared = feasible = 0
+    compared = feasible = partial = 0
     for _ in range(400):
         buyer = rng.choice(catalog.buyers)
         products = rng.sample(catalog.products, rng.randint(1, 3))
@@ -101,18 +107,19 @@ def test_solver_matches_brute_force_on_random_baskets(catalog: Catalog) -> None:
             lines=lines,
         )
         elig = assess(catalog, req, now)
-        if any(not any(c.line_index == i for c in elig.candidates) for i in range(len(lines))):
-            continue
         try:
             expected = brute_force(elig.candidates, elig.need_base)
         except TooBig:
             continue
         r = optimize(req, catalog, now)
-        got = r.recommendation.total_cents if r.recommendation else None
+        got = (len(lines) - len(r.recommendation.lines), r.recommendation.total_cents) if r.recommendation else None
         assert got == expected, f"{req.model_dump()} solver={got} brute={expected}"
+        assert r.status == ("infeasible" if got is None else "partial" if got[0] else "optimal")
         compared += 1
-        feasible += got is not None
-    print(f"compared {compared} baskets with brute force, {feasible} feasible")
+        feasible += got is not None and got[0] == 0
+        partial += got is not None and got[0] > 0
+    print(f"compared {compared} baskets with brute force: {feasible} full, {partial} partial")
     assert compared >= 60, compared
     assert feasible >= 30, feasible
-    assert compared - feasible >= 5, "want some infeasible baskets too"
+    assert partial >= 10, partial
+    assert compared - feasible - partial >= 5, "want some fully infeasible baskets too"

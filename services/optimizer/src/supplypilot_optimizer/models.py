@@ -180,7 +180,7 @@ class Baseline(Strict):
 
 
 class Problem(Strict):
-    """Why no plan exists, at the most specific scope we can name."""
+    """Why a line (or the whole order) can't be filled, at the most specific scope we can name."""
 
     scope: Literal["line", "supplier", "order"]
     product_id: str | None = None
@@ -197,17 +197,22 @@ class DataSource(Strict):
 
 
 class OptimizeResponse(Strict):
-    status: Literal["optimal", "infeasible"]
+    status: Literal["optimal", "partial", "infeasible"] = Field(
+        description="optimal: every line filled. partial: the best plan for the lines that can be "
+        "filled; `problems` says why the others can't. infeasible: no line can be filled."
+    )
     delivery_date: str
     zone: str
     recommendation: Plan | None
     alternatives: list[Alternative]
-    baseline: Baseline | None = Field(description="Null when the request had no baseline")
+    baseline: Baseline | None = Field(
+        description="Null when the request had no baseline. For a partial plan it covers the same filled lines."
+    )
     savings_cents: int | None = Field(
         description="Baseline total minus recommendation total. Only set when the baseline was priced."
     )
     explanations: list[str]
-    problems: list[Problem]
+    problems: list[Problem] = Field(description="Why lines were left out (partial) or nothing could be filled")
     excluded_offers: list[ExcludedOffer]
     data: DataSource
 

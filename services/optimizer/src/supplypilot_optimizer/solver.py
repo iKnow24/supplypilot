@@ -12,6 +12,10 @@ Constraints
   * fees       — each supplier used charges its delivery fee unless the item subtotal reaches
                  its free-delivery threshold
 
+With `allow_skip`, a line that can't be filled (no eligible offer, not enough stock, or only
+from suppliers whose minimum it can't reach) is left out instead of failing the whole order:
+the first objective is then "fill as many lines as possible", and a skipped line buys nothing.
+
 Objective (integer cents), then deterministic lexicographic tie-breaks, each solved with the
 previous objectives pinned: fewer suppliers -> fewer non-preferred suppliers -> fewer packs
 -> a fixed offer order. One worker + a fixed seed, so the same input gives the same answer.
@@ -56,6 +60,7 @@ class Solution:
     picks: list[Pick]
     suppliers: list[SupplierCost]
     proven_optimal: bool
+    skipped: tuple[int, ...] = ()  # request line indices left out (allow_skip only)
 
     @property
     def total_cents(self) -> int:
@@ -83,13 +88,18 @@ def solve(
     *,
     mode: Mode = "total",
     preferred: frozenset[str] = frozenset(),
+    allow_skip: bool = False,
+    fixed_skips: frozenset[int] | None = None,
 ) -> Solution | None:
-    """Best plan for the given candidates, or None if no plan satisfies every constraint."""
+    """Best plan for the given candidates, or None if no plan satisfies every constraint
+    (with allow_skip: None only if not a single line can be filled)."""
     m = cp_model.CpModel()
     by_line: dict[int, list[int]] = {i: [] for i in range(len(need_base))}
     for ci, c in enumerate(candidates):
         by_line[c.line_index].append(ci)
-    if any(not cs for cs in by_line.values()):
+    if not allow_skip and any(not cs for cs in by_line.values()):
+        return None
+    if not candidates:
         return None
 
     # --- packs per candidate, split into price steps (all-units tiers)
@@ -122,11 +132,25 @@ def solve(
             cp_model.LinearExpr.weighted_sum([mk for _, _, mk in parts], [st.price_cents for st, _, _ in parts])
         )
 
-    # --- coverage per line (exact)
+    # --- coverage per line (exact); a skipped line is not covered and buys nothing
+    skip: dict[int, cp_model.IntVar] = {}
     for line, cis in by_line.items():
+        if allow_skip:
+            skip[line] = m.new_bool_var(f"skip_{line}")
+            if fixed_skips is not None:
+                m.add(skip[line] == int(line in fixed_skips))
+        if not cis:
+            m.add(skip[line] == 1)
+            continue
         ints, _ = _scale([need_base[line], *(candidates[ci].pack_base for ci in cis)])
         rhs, coefs = ints[0], ints[1:]
-        m.add(sum(coef * n[ci] for coef, ci in zip(coefs, cis, strict=True)) >= rhs)
+        covered = cp_model.LinearExpr.weighted_sum([n[ci] for ci in cis], coefs)
+        if allow_skip:
+            m.add(covered + rhs * skip[line] >= rhs)
+            for ci in cis:
+                m.add(n[ci] <= ubs[ci] * (1 - skip[line]))
+        else:
+            m.add(covered >= rhs)
 
     # --- stock is per offer, shared if one offer could fill two lines
     by_offer: dict[str, list[int]] = {}
@@ -180,13 +204,15 @@ def solve(
         "items": [items_total, total, supplier_count, non_preferred, packs, stable],
         "suppliers": [supplier_count, total, non_preferred, packs, stable],
     }[mode]
+    if allow_skip:
+        objectives = [LE.sum(list(skip.values())), *objectives]
 
     solver = cp_model.CpSolver()
     solver.parameters.num_workers = 1
     solver.parameters.random_seed = 0
     solver.parameters.max_time_in_seconds = TIME_LIMIT_S
 
-    tracked: list[cp_model.IntVar] = [*n, *used.values(), *fee_on.values()]
+    tracked: list[cp_model.IntVar] = [*n, *used.values(), *fee_on.values(), *skip.values()]
     tracked += [v for parts in step_vars for _, on, mk in parts for v in (on, mk)]
     snapshot: dict[int, int] | None = None
     proven = True
@@ -228,4 +254,7 @@ def solve(
                 fee_waived=not charged,
             )
         )
-    return Solution(picks=picks, suppliers=costs, proven_optimal=proven)
+    skipped = tuple(sorted(line for line, v in skip.items() if val(v)))
+    if skipped and len(skipped) == len(need_base):
+        return None
+    return Solution(picks=picks, suppliers=costs, proven_optimal=proven, skipped=skipped)

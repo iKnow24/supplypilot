@@ -19,9 +19,12 @@ import { deliveryOptions, isBookableDate } from "@/lib/cart/delivery-options";
 import { copyName } from "@/lib/cart/names";
 import { validateAmount, validateLine, validateListName } from "@/lib/cart/validation";
 import { getRepository } from "@/lib/catalog/seed-repository";
+import { OptimizerError, callOptimizer } from "@/lib/optimizer/client";
+import { buildOptimizeRequest } from "@/lib/optimizer/request";
 import { getSession, persistenceProblem } from "@/lib/session";
 
-export type ActionResult = { ok: true; message?: string } | { ok: false; error: string };
+export type ActionResult =
+  { ok: true; message?: string; runId?: string } | { ok: false; error: string };
 
 type Ctx = Awaited<ReturnType<typeof catalogContext>> & { state: BuyerStateRepository };
 
@@ -36,6 +39,7 @@ async function run(fn: (ctx: Ctx) => Promise<ActionResult | void>): Promise<Acti
       revalidatePath("/cart");
       revalidatePath("/lists");
       revalidatePath("/");
+      revalidatePath("/results", "layout");
     }
     return result;
   } catch (e) {
@@ -213,5 +217,39 @@ export async function deleteSavedList(listId: string): Promise<ActionResult> {
   return run(async ({ state }) => {
     await state.deleteList(str(listId));
     return { ok: true, message: "List deleted" };
+  });
+}
+
+// ------------------------------------------------------------------------- find best price
+
+/**
+ * Price the saved cart with the optimizer and keep the result. Everything comes from the
+ * database (cart, buyer, preferences), never from the browser. Infeasible answers are saved
+ * too: "why can't I get this?" is a result worth keeping.
+ */
+export async function findBestPrice(): Promise<ActionResult> {
+  return run(async ({ state }) => {
+    const [session, cart] = await Promise.all([getSession(), state.getCart()]);
+    if (cart.lines.length === 0) return { ok: false, error: "Add something to your cart first" };
+    if (!cart.deliveryDate) return { ok: false, error: "Pick a delivery date first" };
+
+    const repo = getRepository();
+    const [source, suppliers] = await Promise.all([repo.source(), repo.listSuppliers()]);
+    const zone = session.buyer.locations[0]!.zone;
+    const options = deliveryOptions(suppliers, zone, source.now, source.timezone);
+    if (!isBookableDate(cart.deliveryDate, options)) {
+      return { ok: false, error: "Your delivery date is no longer bookable. Pick a new one." };
+    }
+
+    const request = buildOptimizeRequest({ buyerId: session.buyer.id, zone, cart });
+    let response;
+    try {
+      response = await callOptimizer(request);
+    } catch (e) {
+      if (e instanceof OptimizerError) return { ok: false, error: e.message };
+      throw e;
+    }
+    const runId = await state.saveRun(request, response);
+    return { ok: true, runId };
   });
 }

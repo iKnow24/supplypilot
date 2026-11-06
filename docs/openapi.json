@@ -356,7 +356,7 @@
                 "type": "null"
               }
             ],
-            "description": "Null when the request had no baseline"
+            "description": "Null when the request had no baseline. For a partial plan it covers the same filled lines."
           },
           "data": {
             "$ref": "#/components/schemas/DataSource"
@@ -380,6 +380,7 @@
             "type": "array"
           },
           "problems": {
+            "description": "Why lines were left out (partial) or nothing could be filled",
             "items": {
               "$ref": "#/components/schemas/Problem"
             },
@@ -409,8 +410,10 @@
             "title": "Savings Cents"
           },
           "status": {
+            "description": "optimal: every line filled. partial: the best plan for the lines that can be filled; `problems` says why the others can't. infeasible: no line can be filled.",
             "enum": [
               "optimal",
+              "partial",
               "infeasible"
             ],
             "title": "Status",
@@ -575,7 +578,7 @@
       },
       "Problem": {
         "additionalProperties": false,
-        "description": "Why no plan exists, at the most specific scope we can name.",
+        "description": "Why a line (or the whole order) can't be filled, at the most specific scope we can name.",
         "properties": {
           "code": {
             "title": "Code",

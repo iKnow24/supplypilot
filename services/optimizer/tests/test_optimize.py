@@ -151,3 +151,31 @@ def test_explains_not_enough_stock(catalog: Catalog) -> None:
     assert r.status == "infeasible"
     assert [(p.code, p.product_id) for p in r.problems] == [("insufficient_stock", "prd_butter_unsalted")]
     assert "Only 288 lb" in r.problems[0].message and "you asked for 400" in r.problems[0].message
+
+
+# --------------------------------------------------------------------------- partial plans
+
+
+def test_one_unfillable_line_doesnt_sink_the_order(catalog: Catalog) -> None:
+    # Sunday Crumb's weekly list on Tuesday: strawberries only come from Citrus Row, and 16 lb
+    # can't reach its $75 minimum. Everything else should still get the best price.
+    buyer = next(b for b in catalog.buyers if b.id == "org_sundaycrumb")
+    weekly = buyer.saved_lists[0]
+    lines = [{"product_id": ln.product_id, "quantity": ln.quantity, "unit": ln.unit} for ln in weekly.lines]
+    baseline = {"lines": [{"product_id": ln.product_id, "supplier_id": ln.current_supplier_id} for ln in weekly.lines]}
+    r = run(catalog, "scn_02_bundle_one_supplier", lines=lines, baseline=baseline)
+    assert r.status == "partial"
+    plan = r.recommendation
+    assert plan is not None
+    assert len(plan.lines) == len(lines) - 1
+    assert "prd_strawberries" not in {line.product_id for line in plan.lines}
+    assert [p.product_id for p in r.problems if p.scope == "line"] == ["prd_strawberries"]
+    assert any("Citrus Row's $75.00 minimum" in p.message for p in r.problems)
+    assert r.explanations[0].startswith(f"Best price for {len(lines) - 1} of {len(lines)} items")
+    # Savings compare like with like: the baseline covers the same filled lines.
+    assert r.baseline and r.baseline.plan
+    assert {line.product_id for line in r.baseline.plan.lines} == {line.product_id for line in plan.lines}
+    assert r.savings_cents == r.baseline.plan.total_cents - plan.total_cents
+    # Alternatives fill the same lines.
+    for alt in r.alternatives:
+        assert {line.product_id for line in alt.plan.lines} == {line.product_id for line in plan.lines}

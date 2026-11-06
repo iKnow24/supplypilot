@@ -1,13 +1,44 @@
 import type { PostgrestError } from "@supabase/supabase-js";
 
+import type { Json } from "../db/database.types";
+import type { OptimizeRequest, OptimizeResponse } from "../optimizer/types";
 import type { DbClient } from "../supabase/server";
 import {
   BuyerStateError,
   type BuyerStateRepository,
   type Cart,
   type CartLine,
+  type OptimizationRun,
+  type OptimizationRunSummary,
   type SavedList,
 } from "./repository";
+
+const RUN_SUMMARY_COLUMNS =
+  "id, created_at, delivery_date, status, total_cents, savings_cents, supplier_count, line_count";
+
+type RunSummaryRow = {
+  id: string;
+  created_at: string;
+  delivery_date: string;
+  status: string;
+  total_cents: number | null;
+  savings_cents: number | null;
+  supplier_count: number | null;
+  line_count: number;
+};
+
+function toRunSummary(r: RunSummaryRow): OptimizationRunSummary {
+  return {
+    id: r.id,
+    createdAt: new Date(r.created_at),
+    deliveryDate: r.delivery_date,
+    status: r.status === "optimal" || r.status === "partial" ? r.status : "infeasible",
+    totalCents: r.total_cents,
+    savingsCents: r.savings_cents,
+    supplierCount: r.supplier_count,
+    lineCount: r.line_count,
+  };
+}
 
 type LineRow = {
   product_id: string;
@@ -218,5 +249,54 @@ export class SupabaseBuyerStateRepository implements BuyerStateRepository {
           .eq("org_id", this.orgId)
           .eq("product_id", productId);
     if (error) fail(error, "update favorites");
+  }
+
+  async saveRun(request: OptimizeRequest, response: OptimizeResponse) {
+    const plan = response.recommendation;
+    const { data, error } = await this.db
+      .from("optimization_runs")
+      .insert({
+        org_id: this.orgId,
+        delivery_date: request.delivery_date,
+        status: response.status,
+        total_cents: plan?.total_cents ?? null,
+        savings_cents: response.savings_cents ?? null,
+        supplier_count: plan?.supplier_count ?? null,
+        line_count: request.lines.length,
+        request: request as unknown as NonNullable<Json>,
+        response: response as unknown as NonNullable<Json>,
+      })
+      .select("id")
+      .single();
+    if (error) fail(error, "save the result");
+    return data.id;
+  }
+
+  async getRun(id: string): Promise<OptimizationRun | null> {
+    if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
+    const { data, error } = await this.db
+      .from("optimization_runs")
+      .select(`${RUN_SUMMARY_COLUMNS}, request, response`)
+      .eq("org_id", this.orgId)
+      .eq("id", id)
+      .maybeSingle();
+    if (error) fail(error, "load that result");
+    if (!data) return null;
+    return {
+      ...toRunSummary(data),
+      request: data.request as unknown as OptimizeRequest,
+      response: data.response as unknown as OptimizeResponse,
+    };
+  }
+
+  async listRuns(limit = 20) {
+    const { data, error } = await this.db
+      .from("optimization_runs")
+      .select(RUN_SUMMARY_COLUMNS)
+      .eq("org_id", this.orgId)
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    if (error) fail(error, "load past results");
+    return data.map(toRunSummary);
   }
 }

@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getRepository } from "@/lib/catalog/seed-repository";
+import { formatCents } from "@/lib/money";
 import { formatDate, nextDeliveryDates } from "@/lib/delivery";
 import { loadSavedListAndOpen } from "@/app/cart/actions";
 import { PersistenceNotice } from "@/components/app/persistence-notice";
@@ -15,11 +16,13 @@ import { baselineSuppliers, greeting } from "@/lib/view";
 export default async function HomePage() {
   const repo = getRepository();
   const { buyer, persistence, state } = await getSession();
-  const [source, lists, suppliers] = await Promise.all([
+  const [source, lists, suppliers, runs] = await Promise.all([
     repo.source(),
     state ? state.listSavedLists() : Promise.resolve([]),
     repo.listSuppliers(),
+    state ? state.listRuns(20) : Promise.resolve([]),
   ]);
+  const saved = runs.find((r) => r.savingsCents !== null && r.savingsCents > 0);
   const zone = buyer.locations[0]!.zone;
   const zones = await repo.zones();
   const zoneName = zones.find((z) => z.id === zone)?.name ?? zone;
@@ -107,11 +110,22 @@ export default async function HomePage() {
             <CardContent className="pt-5 sm:pt-6">
               <div className="flex items-center gap-3">
                 <PiggyBank className="text-muted-foreground size-5" aria-hidden />
-                <p className="tabular text-2xl font-semibold">—</p>
+                <p className="tabular text-2xl font-semibold">
+                  {saved ? formatCents(saved.savingsCents!) : "—"}
+                </p>
               </div>
               <p className="text-muted-foreground mt-2 text-sm">
-                Nothing to show yet. We only report savings measured against your own saved baseline
-                order, never estimates.
+                {saved ? (
+                  <>
+                    Your latest result for {formatDate(saved.deliveryDate)} beats your usual
+                    suppliers by this much, delivered.{" "}
+                    <Link href={`/results/${saved.id}`} className="text-foreground underline">
+                      See how
+                    </Link>
+                  </>
+                ) : (
+                  "Nothing to show yet. We only report savings measured against your own usual suppliers, never estimates."
+                )}
               </p>
             </CardContent>
           </Card>

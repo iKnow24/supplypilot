@@ -7,6 +7,8 @@
  * suppliers, units) point into that catalog and are validated before every write by the
  * server actions (src/app/cart/actions.ts).
  */
+import type { OptimizeRequest, OptimizeResponse } from "../optimizer/types";
+
 export interface CartLine {
   product_id: string;
   /** Positive decimal string, never a float. */
@@ -35,6 +37,22 @@ export interface SavedList {
 
 export type SupplierPreference = "preferred" | "neutral" | "excluded";
 
+/** One "Find My Best Price" result, stored exactly as the optimizer returned it. */
+export interface OptimizationRun {
+  id: string;
+  createdAt: Date;
+  deliveryDate: string;
+  status: "optimal" | "partial" | "infeasible";
+  totalCents: number | null;
+  savingsCents: number | null;
+  supplierCount: number | null;
+  lineCount: number;
+  request: OptimizeRequest;
+  response: OptimizeResponse;
+}
+
+export type OptimizationRunSummary = Omit<OptimizationRun, "request" | "response">;
+
 export interface BuyerStateRepository {
   readonly orgId: string;
 
@@ -58,6 +76,10 @@ export interface BuyerStateRepository {
 
   listFavorites(): Promise<string[]>;
   setFavorite(productId: string, favorite: boolean): Promise<void>;
+
+  saveRun(request: OptimizeRequest, response: OptimizeResponse): Promise<string>;
+  getRun(id: string): Promise<OptimizationRun | null>;
+  listRuns(limit?: number): Promise<OptimizationRunSummary[]>;
 }
 
 /** An error whose message is safe and useful to show the buyer. */
