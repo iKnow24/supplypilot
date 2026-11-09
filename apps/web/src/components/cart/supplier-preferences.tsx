@@ -63,8 +63,8 @@ export function SupplierPreferences({
         ))}
       </ul>
       <p className="text-muted-foreground mt-3 text-xs">
-        Excluded suppliers are never used. Preferred ones will be favored when the optimizer arrives
-        (Milestone 3); for now they&apos;re saved with your cart.
+        Excluded suppliers are never used. Preferred ones win ties, and when they can cover the
+        order, results also show what it costs from only them.
       </p>
     </div>
   );
