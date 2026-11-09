@@ -14,3 +14,6 @@ __pycache__/
 # Supabase CLI local state
 supabase/.branches/
 supabase/.temp/
+
+# Vercel CLI link state
+.vercel

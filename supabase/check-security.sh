@@ -2,9 +2,16 @@
 # Database security invariants for everything in the public schema. Run after migrations
 # (make db-check; CI runs it too). Fails loudly so a new table can't ship without RLS.
 #   Local stack:     sh supabase/check-security.sh
-#   Hosted project:  DB_URL="postgresql://postgres:<pw>@db.<ref>.supabase.co:5432/postgres" sh supabase/check-security.sh
+#   Linked hosted project (supabase link):  REMOTE=1 sh supabase/check-security.sh
+#   Any Postgres URL (needs psql):           DB_URL=postgresql://... sh supabase/check-security.sh
 set -eu
-if [ -n "${DB_URL:-}" ]; then
+if [ "${REMOTE:-}" = "1" ]; then
+  # The linked hosted project, read-only, through the Supabase CLI (no psql needed).
+  q() {
+    apps/web/node_modules/.bin/supabase --workdir . db query --remote --read-only --output-format json "$1" 2>/dev/null |
+      python3 -c 'import json,sys; [print(*r.values()) for r in json.load(sys.stdin)["rows"]]'
+  }
+elif [ -n "${DB_URL:-}" ]; then
   q() { psql "$DB_URL" -tA -c "$1"; }
 else
   q() { docker exec supabase_db_supplypilot psql -U postgres -d postgres -tA -c "$1"; }

@@ -6,6 +6,9 @@ A buyer-first purchasing tool for independent bakeries, cafés and restaurants. 
 one list; SupplyPilot finds the lowest *total delivered* cost across participating
 distributors (prices, packs, stock, fees, minimums, delivery days) and explains why.
 
+**Live demo:** https://supplypilot-nu.vercel.app (pick a fictional business in the header; the
+[demo script](docs/demo-script.md) walks through it).
+
 > ⚠️ **Everything in this repo runs on synthetic demo data.** Every supplier and buyer is
 > fictional and labelled "(Demo)". No live prices, no live stock, no real orders.
 
