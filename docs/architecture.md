@@ -4,7 +4,8 @@
 
 ```
 apps/web/               Next.js 16 (App Router) + TypeScript + Tailwind v4 + shadcn/ui-style components
-  src/app/              Routes: / (Home), /cart, /orders, /suppliers, /suppliers/[id], /settings
+  src/app/              Routes: / (landing, (marketing)); the app in (app): /home, /cart, /lists,
+                        /results, /orders, /suppliers, /suppliers/[id], /settings
   src/lib/catalog/      CatalogRepository interface + SeedCatalogRepository (server-only)
   src/lib/              units, delivery dates, freshness policy, money formatting
 services/optimizer/     Python FastAPI service. Owns ALL pricing math and (M3) the CP-SAT optimizer

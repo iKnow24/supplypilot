@@ -5,14 +5,15 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex shrink-0 items-center justify-center gap-2 rounded-lg text-sm font-medium whitespace-nowrap transition-[background-color,box-shadow,transform,color] duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring active:translate-y-px disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90",
+        default:
+          "bg-gradient-to-b from-primary to-primary-strong text-primary-foreground shadow-[inset_0_1px_0_oklch(1_0_0/0.18),0_0_0_1px_var(--primary-strong),0_1px_2px_oklch(0.2_0.05_165/0.3),0_4px_12px_-4px_oklch(0.47_0.105_163/0.45)] hover:brightness-110",
         secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/70",
-        outline: "border border-input bg-card hover:bg-muted",
-        ghost: "hover:bg-muted",
+        outline: "bg-card text-foreground shadow-card hover:bg-muted/60 hover:shadow-raised",
+        ghost: "text-muted-foreground hover:bg-muted hover:text-foreground",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {

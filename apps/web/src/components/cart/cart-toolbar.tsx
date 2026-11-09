@@ -3,7 +3,7 @@
 import { Eraser, Save } from "lucide-react";
 import { useState } from "react";
 
-import { clearCart, saveCartAsList } from "@/app/cart/actions";
+import { clearCart, saveCartAsList } from "@/app/(app)/cart/actions";
 import { Button } from "@/components/ui/button";
 
 import { useAction } from "./status";

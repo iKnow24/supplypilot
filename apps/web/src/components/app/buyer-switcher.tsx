@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useId, useTransition } from "react";
 
 import { switchDemoBuyer } from "@/app/actions";
 import type { BuyerSummary } from "@/lib/catalog/repository";
@@ -15,23 +15,31 @@ export function BuyerSwitcher({
   buyers,
   currentId,
   compact = false,
+  showKind = !compact,
 }: {
   buyers: BuyerSummary[];
   currentId: string;
   compact?: boolean;
+  /** Append "· Bakery" etc. to each option (needs room). */
+  showKind?: boolean;
 }) {
   const [pending, startTransition] = useTransition();
+  const id = useId();
   return (
     <form action={switchDemoBuyer}>
       <label
-        htmlFor={compact ? "buyer-compact" : "buyer"}
-        className={compact ? "sr-only" : "mb-1.5 block text-sm font-medium"}
+        htmlFor={id}
+        className={
+          compact
+            ? "sr-only"
+            : "text-muted-foreground mb-1.5 block text-[11px] font-medium tracking-[0.08em] uppercase"
+        }
       >
         Ordering for
       </label>
       <select
         key={currentId}
-        id={compact ? "buyer-compact" : "buyer"}
+        id={id}
         name="buyerId"
         defaultValue={currentId}
         disabled={pending}
@@ -43,12 +51,16 @@ export function BuyerSwitcher({
             window.location.reload();
           });
         }}
-        className="border-input bg-card h-9 max-w-[11rem] rounded-lg border px-2.5 text-sm font-medium disabled:opacity-60 sm:max-w-[16rem]"
+        className={
+          compact
+            ? "border-input bg-card h-9 max-w-[11rem] rounded-lg border px-2.5 text-sm font-medium disabled:opacity-60 sm:max-w-[16rem]"
+            : "border-input bg-background hover:bg-muted/60 h-9 w-full rounded-lg border px-2.5 text-sm font-medium transition-colors disabled:opacity-60"
+        }
       >
         {buyers.map((b) => (
           <option key={b.id} value={b.id}>
             {b.name.replace(" (Demo)", "")}
-            {compact ? "" : ` · ${KIND_LABEL[b.kind]}`}
+            {showKind ? ` · ${KIND_LABEL[b.kind]}` : ""}
           </option>
         ))}
       </select>

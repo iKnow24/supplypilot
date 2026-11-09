@@ -3,7 +3,7 @@
 import { Download, FileUp } from "lucide-react";
 import { useId, useMemo, useRef, useState } from "react";
 
-import { importCartLines } from "@/app/cart/actions";
+import { importCartLines } from "@/app/(app)/cart/actions";
 import { Button } from "@/components/ui/button";
 import type { Product, Unit } from "@/lib/catalog/schema";
 import { CSV_MAX_BYTES, parseCartCsv, type CsvResult } from "@/lib/cart/csv";

@@ -47,22 +47,28 @@ export function TotalHero({
   return (
     <section
       aria-labelledby="total-heading"
-      className="bg-card rounded-2xl border px-6 py-8 shadow-xs sm:px-10"
+      className="wash shadow-card animate-fade-up relative overflow-hidden rounded-3xl px-6 py-8 sm:px-10 sm:py-10"
     >
-      <h2 id="total-heading" className="text-muted-foreground text-sm font-medium">
-        Lowest total delivered cost{partial ? " for the items we could include" : ""}
-      </h2>
-      <p className="tabular mt-1 text-4xl font-semibold tracking-tight sm:text-5xl">
-        {formatCents(plan.total_cents)}
-      </p>
-      <p className="text-muted-foreground mt-2 text-sm">
-        {formatCents(plan.items_subtotal_cents)} items +{" "}
-        {plan.fees_cents ? `${formatCents(plan.fees_cents)} delivery` : "free delivery"} ·{" "}
-        {plan.supplier_count} supplier{plan.supplier_count === 1 ? "" : "s"} · delivered{" "}
-        {formatDate(deliveryDate, "long")}
-      </p>
-      <div className="mt-4">
-        <SavingsNote baseline={baseline} savingsCents={savingsCents} />
+      <div
+        aria-hidden
+        className="dots absolute inset-y-0 right-0 w-1/2 [mask-image:linear-gradient(to_left,#000,transparent)] opacity-60"
+      />
+      <div className="relative">
+        <h2 id="total-heading" className="text-muted-foreground text-sm font-medium">
+          Lowest total delivered cost{partial ? " for the items we could include" : ""}
+        </h2>
+        <p className="tabular mt-2 text-5xl font-semibold tracking-[-0.04em] sm:text-6xl">
+          {formatCents(plan.total_cents)}
+        </p>
+        <p className="text-muted-foreground mt-3 text-sm">
+          {formatCents(plan.items_subtotal_cents)} items +{" "}
+          {plan.fees_cents ? `${formatCents(plan.fees_cents)} delivery` : "free delivery"} ·{" "}
+          {plan.supplier_count} supplier{plan.supplier_count === 1 ? "" : "s"} · delivered{" "}
+          {formatDate(deliveryDate, "long")}
+        </p>
+        <div className="mt-5">
+          <SavingsNote baseline={baseline} savingsCents={savingsCents} />
+        </div>
       </div>
     </section>
   );
@@ -360,7 +366,13 @@ export function ProblemsCard({
     ),
   ];
   return (
-    <Card className={partial ? "border-warning/40" : "border-destructive/40"}>
+    <Card
+      className={
+        partial
+          ? "bg-warning-soft/40 ring-warning/25 ring-1"
+          : "bg-destructive-soft/40 ring-destructive/25 ring-1"
+      }
+    >
       <CardHeader>
         <CardTitle
           className={`flex items-center gap-2 ${partial ? "text-warning" : "text-destructive"}`}
@@ -390,7 +402,7 @@ export function ProblemsCard({
 export function ExcludedOffers({ offers, names }: { offers: ExcludedOffer[]; names: Names }) {
   if (!offers.length) return null;
   return (
-    <details className="bg-card rounded-xl border px-5 py-4 text-sm">
+    <details className="bg-card shadow-card rounded-2xl px-5 py-4 text-sm">
       <summary className="cursor-pointer font-medium">
         {offers.length} offer{offers.length === 1 ? "" : "s"} couldn&apos;t be used
       </summary>

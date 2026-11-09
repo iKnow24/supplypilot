@@ -3,7 +3,7 @@
 import { Star, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-import { removeCartLine, setFavorite, updateCartLine } from "@/app/cart/actions";
+import { removeCartLine, setFavorite, updateCartLine } from "@/app/(app)/cart/actions";
 import type { CartLine } from "@/lib/buyer-state/repository";
 import type { Product } from "@/lib/catalog/schema";
 import { validateAmount, type CatalogIndex } from "@/lib/cart/validation";
