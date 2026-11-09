@@ -8,6 +8,9 @@ import { defineConfig, devices } from "@playwright/test";
 const PORT = Number(process.env.E2E_PORT ?? 3100);
 const OPTIMIZER_PORT = Number(process.env.E2E_OPTIMIZER_PORT ?? 8000);
 const CI = !!process.env.CI;
+// Point at an existing deployment instead of starting local servers, e.g.
+//   E2E_BASE_URL=https://supplypilot-nu.vercel.app npx playwright test
+const REMOTE = process.env.E2E_BASE_URL;
 
 export default defineConfig({
   testDir: "./e2e",
@@ -19,25 +22,29 @@ export default defineConfig({
   retries: CI ? 1 : 0,
   reporter: CI ? [["github"], ["html", { open: "never" }]] : "list",
   use: {
-    baseURL: `http://localhost:${PORT}`,
+    baseURL: REMOTE ?? `http://localhost:${PORT}`,
     trace: "retain-on-failure",
     timezoneId: "America/New_York",
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
-  webServer: [
-    {
-      // The price optimizer (Python). Next.js calls it server-to-server.
-      command: `uv run --directory ../../services/optimizer uvicorn supplypilot_optimizer.api:app --port ${OPTIMIZER_PORT}`,
-      url: `http://127.0.0.1:${OPTIMIZER_PORT}/v1/health`,
-      reuseExistingServer: !CI,
-      timeout: 120_000,
-    },
-    {
-      command: CI ? `npm run build && npm run start -- -p ${PORT}` : `npm run dev -- -p ${PORT}`,
-      url: `http://localhost:${PORT}`,
-      reuseExistingServer: !CI,
-      timeout: 180_000,
-      env: { OPTIMIZER_URL: `http://127.0.0.1:${OPTIMIZER_PORT}` },
-    },
-  ],
+  webServer: REMOTE
+    ? undefined
+    : [
+        {
+          // The price optimizer (Python). Next.js calls it server-to-server.
+          command: `uv run --directory ../../services/optimizer uvicorn supplypilot_optimizer.api:app --port ${OPTIMIZER_PORT}`,
+          url: `http://127.0.0.1:${OPTIMIZER_PORT}/v1/health`,
+          reuseExistingServer: !CI,
+          timeout: 120_000,
+        },
+        {
+          command: CI
+            ? `npm run build && npm run start -- -p ${PORT}`
+            : `npm run dev -- -p ${PORT}`,
+          url: `http://localhost:${PORT}`,
+          reuseExistingServer: !CI,
+          timeout: 180_000,
+          env: { OPTIMIZER_URL: `http://127.0.0.1:${OPTIMIZER_PORT}` },
+        },
+      ],
 });

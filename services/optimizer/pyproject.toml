@@ -26,6 +26,14 @@ dev = [
     "ruff>=0.17.3",
 ]
 
+[tool.vercel]
+# Vercel deploy (docs/deployment.md): main.py re-exports the app; the build step bundles
+# the repo-level catalog next to the service.
+entrypoint = "main:app"
+
+[tool.vercel.scripts]
+build = "python vercel_build.py"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 
