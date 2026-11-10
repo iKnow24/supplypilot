@@ -351,6 +351,11 @@ export class SupabaseBuyerStateRepository implements BuyerStateRepository {
     if (error) fail(error, "save your count");
   }
 
+  async resetDemo() {
+    const { error } = await this.db.rpc("reset_demo_org", { p_org: this.orgId });
+    if (error) fail(error, "reset the demo");
+  }
+
   async setFavorite(productId: string, favorite: boolean) {
     const { error } = favorite
       ? await this.db

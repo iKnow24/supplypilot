@@ -105,6 +105,12 @@ export interface BuyerStateRepository {
     counts: { product_id: string; quantity: string; unit: string }[],
   ): Promise<void>;
 
+  /**
+   * Demo businesses only: back to the seeded starting state (lists and shelf counts), with no
+   * cart, results, POs, Autopilot runs, imported prices or favorites. Refused for real orgs.
+   */
+  resetDemo(): Promise<void>;
+
   saveRun(request: OptimizeRequest, response: OptimizeResponse): Promise<string>;
   getRun(id: string): Promise<OptimizationRun | null>;
   listRuns(limit?: number): Promise<OptimizationRunSummary[]>;

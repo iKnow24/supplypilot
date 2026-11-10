@@ -5,7 +5,8 @@ Seeds, for each fictional demo buyer in the catalog:
   * a buyer_orgs row,
   * one demo Supabase Auth user (email demo.<slug>@supplypilot.test) and its membership,
   * the buyer's saved lists, with the same ids the catalog and optimizer scenarios use,
-  * demo stock for the items on their weekly list: 8 weeks of usage and one shelf count.
+  * demo stock for the items on their weekly list: 8 weeks of usage and one shelf count,
+  * the starting state "Reset demo" restores (public.demo_seed).
 
 The demo password is a LOCAL TEST VALUE for fictional users, not a secret. Never run this seed
 against a hosted project that real people sign in to.
@@ -53,7 +54,7 @@ def unit_fraction(*parts: str) -> float:
     return int.from_bytes(digest[:8], "big") / 2**64
 
 
-def stock_sql(org: str, lines: list[dict], catalog: dict) -> list[str]:
+def stock_sql(org: str, lines: list[dict], catalog: dict) -> tuple[list[dict], list[str]]:
     """Demo stock: 8 weeks of usage around the weekly list amounts, plus one shelf count."""
     whole = {u["code"] for u in catalog["units"] if u["dimension"] == "count"}
     now = datetime.fromisoformat(catalog["meta"]["reference_now"])
@@ -63,7 +64,7 @@ def stock_sql(org: str, lines: list[dict], catalog: dict) -> list[str]:
     def rnd(value: float, unit: str) -> str:
         return str(round(value)) if unit in whole else f"{value:.1f}"
 
-    usage, counts = [], []
+    usage, counts, starting = [], [], []
     for i, line in enumerate(lines):
         product, unit, base = line["product_id"], line["unit"], float(line["quantity"])
         slope = -0.02 + 0.06 * unit_fraction(org, product, "trend")  # -2%..+4% a week
@@ -79,7 +80,11 @@ def stock_sql(org: str, lines: list[dict], catalog: dict) -> list[str]:
         counts.append(
             f"  ({q(org)}, {q(product)}, {rnd(on_hand, unit)}, {q(unit)}, '{counted_at}')"
         )
-    return [
+        starting.append(
+            {"product_id": product, "quantity": rnd(on_hand, unit), "unit": unit,
+             "counted_at": counted_at}
+        )
+    return starting, [
         "insert into public.stock_usage (org_id, product_id, week_start, quantity, unit, source) values\n"
         + ",\n".join(usage)
         + ";",
@@ -136,7 +141,27 @@ def main() -> None:
                 + ",\n".join(rows)
                 + ";"
             )
-        out += stock_sql(org, buyer["saved_lists"][0]["lines"], catalog)
+        starting_counts, sql = stock_sql(org, buyer["saved_lists"][0]["lines"], catalog)
+        out += sql
+        # What "Reset demo" restores (supabase/migrations/20261113000000_demo_reset.sql).
+        seed = {
+            "lists": [
+                {
+                    "id": lst["id"],
+                    "name": lst["name"],
+                    "lines": [
+                        {k: line[k] for k in ("product_id", "quantity", "unit", "current_supplier_id")}
+                        for line in lst["lines"]
+                    ],
+                }
+                for lst in buyer["saved_lists"]
+            ],
+            "counts": starting_counts,
+        }
+        out.append(
+            "insert into public.demo_seed (org_id, data) values "
+            f"({q(org)}, {q(json.dumps(seed, separators=(',', ':')))}::jsonb);"
+        )
         out.append("")
     OUT.write_text("\n".join(out))
     print(f"wrote {OUT.relative_to(ROOT)}")
