@@ -175,7 +175,7 @@ function PlanCard({
           <div className="pb-1.5 text-sm">
             <p className="text-muted-foreground">
               {plan.itemCount} item{plan.itemCount === 1 ? "" : "s"}
-              {plan.deliveryDate ? ` · delivered ${formatDate(plan.deliveryDate)}` : ""}
+              {plan.deliveryDate ? ` for ${formatDate(plan.deliveryDate)}` : ""}
             </p>
             {plan.savingsCents !== null && plan.savingsCents > 0 ? (
               <p className="bg-success-soft text-success animate-pop mt-1 inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold">
