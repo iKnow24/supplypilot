@@ -14,3 +14,6 @@ __pycache__/
 # Supabase CLI local state
 supabase/.branches/
 supabase/.temp/
+
+# Demo video output (make demo-video)
+apps/web/demo/out/
