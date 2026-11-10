@@ -10,7 +10,8 @@ import type { Product } from "../catalog/schema";
 import { getRepository } from "../catalog/seed-repository";
 import type { Session } from "../session";
 import { UnitTable } from "../units";
-import { planStock, type StockInput, type StockPlanLine } from "./plan";
+import { isoWeekday, localParts, WEEKDAY_SHORT } from "../delivery";
+import { daysBetween, planStock, type StockInput, type StockPlanLine } from "./plan";
 
 export interface StockRow extends StockPlanLine {
   product: Product;
@@ -35,7 +36,7 @@ export async function loadStock(
 ): Promise<StockView> {
   const repo = getRepository();
   const { state, buyer } = session;
-  const [source, products, units, suppliers, counts, usage, lists, cart] = await Promise.all([
+  const [source, products, units, suppliers, counts, usage, lists] = await Promise.all([
     repo.source(),
     repo.listProducts(),
     repo.units(),
@@ -43,7 +44,6 @@ export async function loadStock(
     state.listStockCounts(),
     state.listStockUsage(),
     state.listSavedLists(),
-    state.getCart(),
   ]);
   const unitTable = new UnitTable(units);
   const productById = new Map(products.map((p) => [p.id, p]));
@@ -54,8 +54,8 @@ export async function loadStock(
   );
   const bookable = (d: string | null | undefined) =>
     d && dates.some((o) => o.date === d) ? d : null;
-  const deliveryDate =
-    bookable(requestedDate) ?? bookable(cart.deliveryDate) ?? dates[0]?.date ?? null;
+  // Plan for the soonest delivery unless the buyer picks another (a cart's date may be stale).
+  const deliveryDate = bookable(requestedDate) ?? dates[0]?.date ?? null;
 
   // Usual supplier and list order, from the buyer's saved lists.
   const usual = new Map<string, string | null>();
@@ -143,4 +143,14 @@ export function parseCount(
   const n = Number(raw);
   if (n > 100_000) return { ok: false, error: "That's more than 100,000" };
   return { ok: true, value: String(n) };
+}
+
+/** Where the planned delivery sits on a level slider. */
+export function deliveryMark(view: StockView): { inDays: number; label: string } | null {
+  if (!view.deliveryDate) return null;
+  const today = localParts(view.now, view.timeZone).date;
+  return {
+    inDays: daysBetween(today, view.deliveryDate),
+    label: WEEKDAY_SHORT[isoWeekday(view.deliveryDate)]!,
+  };
 }

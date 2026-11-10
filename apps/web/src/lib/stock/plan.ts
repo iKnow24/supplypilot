@@ -47,6 +47,8 @@ export interface StockPlanLine {
   weekly: number;
   /** Change of the last 4 weeks against the 4 before, e.g. 0.12 = up 12%. */
   trend: number | null;
+  /** Days the stock on hand lasts at the current burn rate; null if unknown or not used. */
+  daysLeft: number | null;
   /** Local date it runs out at the current burn rate; null if unknown or not used. */
   runsOutOn: string | null;
   /** Expected on hand when the delivery arrives (negative = a shortfall). */
@@ -85,6 +87,7 @@ export function planLine(
     return {
       ...base,
       onHand: input.count?.quantity ?? null,
+      daysLeft: null,
       runsOutOn: null,
       atDelivery: null,
       suggested: 0,
@@ -104,6 +107,7 @@ export function planLine(
   return {
     ...base,
     onHand,
+    daysLeft: daily > 0 ? onHand / daily : null,
     runsOutOn: daily > 0 ? addDays(today, Math.floor(onHand / daily)) : null,
     atDelivery,
     suggested,
