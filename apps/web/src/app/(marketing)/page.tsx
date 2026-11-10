@@ -32,9 +32,20 @@ export const metadata: Metadata = {
   title: { absolute: "SupplyPilot · Buy your kitchen's ingredients for less" },
   description:
     "For independent bakeries, cafés and restaurants. One list, every supplier, the lowest total delivered cost, and exactly why.",
+  // A page-level openGraph replaces the root one, including the file-based share image,
+  // so name the image again here.
   openGraph: {
     title: "SupplyPilot · Stop overpaying for every delivery",
     description: "One list, every supplier, the lowest total delivered cost, and exactly why.",
+    images: [
+      {
+        url: "/opengraph-image.jpg",
+        width: 1200,
+        height: 630,
+        type: "image/jpeg",
+        alt: "SupplyPilot: stop overpaying for every delivery. One list, every supplier, the lowest total delivered cost.",
+      },
+    ],
   },
 };
 
