@@ -15,5 +15,8 @@ __pycache__/
 supabase/.branches/
 supabase/.temp/
 
+# Demo video output (make demo-video)
+apps/web/demo/out/
+
 # Vercel CLI link state
 .vercel

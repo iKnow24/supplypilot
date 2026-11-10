@@ -1,4 +1,4 @@
-.PHONY: setup dev web optimizer test lint seed check api-types db-start db-stop db-reset db-status db-env db-types db-doctor db-check e2e
+.PHONY: setup dev web optimizer test lint seed check api-types db-start db-stop db-reset db-status db-env db-types db-doctor db-check e2e demo-video
 
 setup:            ## Install everything
 	cd apps/web && npm install
@@ -60,6 +60,9 @@ db-types:         ## Regenerate apps/web/src/lib/db/database.types.ts from the l
 
 e2e:              ## Playwright end-to-end tests (needs make db-start)
 	cd apps/web && npm run test:e2e
+
+demo-video:       ## Record the product demo to apps/web/demo/out/supplypilot-demo.mp4 (needs db + make dev, ffmpeg)
+	cd apps/web && node demo/record-demo.mjs
 
 db-status:        ## Show URLs and local keys again
 	$(SUPABASE) status
