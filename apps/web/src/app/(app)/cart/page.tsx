@@ -27,7 +27,7 @@ import { loadSavedListAndOpen } from "./actions";
 export const metadata: Metadata = { title: "Smart Cart" };
 
 export default async function CartPage({ searchParams }: PageProps<"/cart">) {
-  const { error } = await searchParams;
+  const { error, from } = await searchParams;
   const repo = getRepository();
   const { buyer, persistence, state } = await getSession();
   const [products, units, suppliers, source] = await Promise.all([
@@ -105,6 +105,15 @@ export default async function CartPage({ searchParams }: PageProps<"/cart">) {
         description="Add what you need. We find the lowest total delivered cost across your suppliers."
         actions={<CartToolbar defaultName={defaultListName} hasLines={cart.lines.length > 0} />}
       />
+      {from === "stock" && cart.lines.length ? (
+        <p
+          role="status"
+          className="bg-accent text-accent-foreground mb-6 rounded-xl px-4 py-3 text-sm"
+        >
+          Drafted from your stock levels. Check the amounts, then Find My Best Price to compare
+          suppliers.
+        </p>
+      ) : null}
       {typeof error === "string" ? (
         <p
           role="alert"

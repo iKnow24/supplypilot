@@ -4,7 +4,8 @@
 Seeds, for each fictional demo buyer in the catalog:
   * a buyer_orgs row,
   * one demo Supabase Auth user (email demo.<slug>@supplypilot.test) and its membership,
-  * the buyer's saved lists, with the same ids the catalog and optimizer scenarios use.
+  * the buyer's saved lists, with the same ids the catalog and optimizer scenarios use,
+  * demo stock for the items on their weekly list: 8 weeks of usage and one shelf count.
 
 The demo password is a LOCAL TEST VALUE for fictional users, not a secret. Never run this seed
 against a hosted project that real people sign in to.
@@ -14,8 +15,10 @@ Run:  python3 supabase/generate_seed_sql.py     (CI checks the output is current
 
 from __future__ import annotations
 
+import hashlib
 import json
 import uuid
+from datetime import datetime, timedelta
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -36,6 +39,54 @@ def q(value: str | None) -> str:
 
 def demo_email(org_id: str) -> str:
     return f"demo.{org_id.removeprefix('org_')}@{DEMO_EMAIL_DOMAIN}"
+
+
+# Stock levels relative to a week's use, cycled over each buyer's weekly list so the demo
+# shows every state: short before delivery, needs ordering, and fine for now.
+ON_HAND_WEEKS = [0.1, 0.5, 1.7, 0.8, 0.3, 2.2, 0.6, 1.1, 1.9, 0.45, 0.7, 0.25, 1.0, 0.55, 2.4, 0.9]
+USAGE_WEEKS = 8
+
+
+def unit_fraction(*parts: str) -> float:
+    """Deterministic pseudo-random number in [0, 1) (no RNG state, same output every run)."""
+    digest = hashlib.sha256(":".join(parts).encode()).digest()
+    return int.from_bytes(digest[:8], "big") / 2**64
+
+
+def stock_sql(org: str, lines: list[dict], catalog: dict) -> list[str]:
+    """Demo stock: 8 weeks of usage around the weekly list amounts, plus one shelf count."""
+    whole = {u["code"] for u in catalog["units"] if u["dimension"] == "count"}
+    now = datetime.fromisoformat(catalog["meta"]["reference_now"])
+    this_monday = now.date() - timedelta(days=now.isoweekday() - 1)
+    counted_at = (now - timedelta(hours=15)).isoformat()  # the evening before
+
+    def rnd(value: float, unit: str) -> str:
+        return str(round(value)) if unit in whole else f"{value:.1f}"
+
+    usage, counts = [], []
+    for i, line in enumerate(lines):
+        product, unit, base = line["product_id"], line["unit"], float(line["quantity"])
+        slope = -0.02 + 0.06 * unit_fraction(org, product, "trend")  # -2%..+4% a week
+        for k in range(USAGE_WEEKS):
+            week = this_monday - timedelta(weeks=USAGE_WEEKS - k)
+            noise = 0.9 + 0.2 * unit_fraction(org, product, str(k))
+            value = max(0.0, base * (1 + slope * (k - USAGE_WEEKS + 1)) * noise)
+            usage.append(
+                f"  ({q(org)}, {q(product)}, '{week.isoformat()}', {rnd(value, unit)}, {q(unit)}, "
+                "'demo_estimate')"
+            )
+        on_hand = base * ON_HAND_WEEKS[i % len(ON_HAND_WEEKS)]
+        counts.append(
+            f"  ({q(org)}, {q(product)}, {rnd(on_hand, unit)}, {q(unit)}, '{counted_at}')"
+        )
+    return [
+        "insert into public.stock_usage (org_id, product_id, week_start, quantity, unit, source) values\n"
+        + ",\n".join(usage)
+        + ";",
+        "insert into public.stock_counts (org_id, product_id, quantity, unit, counted_at) values\n"
+        + ",\n".join(counts)
+        + ";",
+    ]
 
 
 def main() -> None:
@@ -85,6 +136,7 @@ def main() -> None:
                 + ",\n".join(rows)
                 + ";"
             )
+        out += stock_sql(org, buyer["saved_lists"][0]["lines"], catalog)
         out.append("")
     OUT.write_text("\n".join(out))
     print(f"wrote {OUT.relative_to(ROOT)}")

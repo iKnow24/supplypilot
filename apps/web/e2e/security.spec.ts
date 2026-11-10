@@ -24,7 +24,7 @@ test("nothing the app needs is blocked by its CSP", async ({ page, context, base
     }
   });
   await actAs(context, "org_thirdshift", baseURL!);
-  for (const path of ["/", "/home", "/lists", "/orders", "/suppliers", "/settings"]) {
+  for (const path of ["/", "/home", "/stock", "/lists", "/orders", "/suppliers", "/settings"]) {
     await page.goto(path, { waitUntil: "networkidle" });
   }
   // A full interactive flow proves scripts hydrated under the policy.

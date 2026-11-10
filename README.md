@@ -19,7 +19,8 @@ Milestones 1–5 are done: foundation, shopping workflow (persistent cart, saved
 delivery date, supplier preferences), the CP-SAT optimizer (`POST /v1/optimize`), the
 recommendations UI ("Find My Best Price", results, alternatives, history), and purchase orders
 (approve, draft POs per supplier, CSV/PDF export, reorder). M6 added the accessibility,
-security and deployment pass. See [`docs/implementation-checklist.md`](docs/implementation-checklist.md),
+security and deployment pass. **Stock** (`/stock`) shows what's on hand, the weekly burn rate,
+and a suggested order for a chosen delivery, which goes straight into the Smart Cart. See [`docs/implementation-checklist.md`](docs/implementation-checklist.md),
 the [demo script](docs/demo-script.md) and [how to deploy](docs/deployment.md).
 
 ## Run it locally

@@ -49,6 +49,8 @@ describe("anonymous visitors", () => {
       "cart_lines",
       "favorites",
       "org_members",
+      "stock_counts",
+      "stock_usage",
     ] as const) {
       const { data, error } = await client().from(table).select("*");
       expect(data ?? []).toEqual([]);
@@ -361,5 +363,48 @@ describe("SupabaseBuyerStateRepository", () => {
       repo.setSupplierPreferences({ preferred: ["sup_kestrel"], excluded: ["sup_kestrel"] }),
     ).rejects.toThrow(/isn't allowed/);
     await repo.setSupplierPreferences({ preferred: [], excluded: [] });
+  });
+});
+
+describe("stock", () => {
+  it("reads only your own org's counts and usage", async () => {
+    const repo = new SupabaseBuyerStateRepository(a, A);
+    const [counts, usage] = await Promise.all([repo.listStockCounts(), repo.listStockUsage()]);
+    expect(counts.length).toBeGreaterThan(0);
+    expect(usage.length).toBeGreaterThan(0);
+    const { data } = await a.from("stock_usage").select("org_id");
+    expect(new Set(data!.map((r) => r.org_id))).toEqual(new Set([A]));
+  });
+
+  it("appends counts; the latest one wins, and history can't be edited", async () => {
+    const repo = new SupabaseBuyerStateRepository(a, A);
+    const before = (await repo.listStockCounts()).find((c) => c.productId === "prd_oat_milk")!;
+    await repo.recordStockCounts([{ product_id: "prd_oat_milk", quantity: "3.5", unit: "qt" }]);
+    const after = (await repo.listStockCounts()).find((c) => c.productId === "prd_oat_milk")!;
+    expect(after.quantity).toBe("3.5");
+    expect(after.countedAt > before.countedAt).toBe(true);
+
+    const upd = await a.from("stock_counts").update({ quantity: 1 }).eq("org_id", A);
+    expect(upd.error?.code).toBe("42501");
+    const del = await a.from("stock_counts").delete().eq("org_id", A);
+    expect(del.error?.code).toBe("42501");
+    const usage = await a.from("stock_usage").insert({
+      org_id: A,
+      product_id: "prd_oat_milk",
+      week_start: "2026-11-02",
+      quantity: 1,
+      unit: "qt",
+      source: "pos",
+    });
+    expect(usage.error?.code).toBe("42501");
+  });
+
+  it("can't record counts for another org", async () => {
+    const { error } = await a
+      .from("stock_counts")
+      .insert({ org_id: B, product_id: "prd_onion_yellow", quantity: 1, unit: "lb" });
+    expect(error?.code).toBe("42501");
+    const { data } = await b.from("stock_counts").select("quantity").eq("quantity", 3.5);
+    expect(data).toEqual([]);
   });
 });
