@@ -1,6 +1,6 @@
 "use client";
 
-import { setSupplierPreference } from "@/app/cart/actions";
+import { setSupplierPreference } from "@/app/(app)/cart/actions";
 import type { SupplierPreference } from "@/lib/buyer-state/repository";
 import { cn } from "@/lib/utils";
 

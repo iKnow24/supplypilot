@@ -4,6 +4,8 @@ import { expect, test, type Page } from "@playwright/test";
 import { actAs, findBestPrice, pickDate, replaceCartWithCsv } from "./helpers";
 
 // WCAG 2.1 A + AA rules on every screen, including a real result and a real PO.
+// Reduced motion: axe must measure final colors, not text caught mid fade-in.
+test.use({ reducedMotion: "reduce" });
 const TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
 
 const found: unknown[] = [];
@@ -51,7 +53,8 @@ test("every screen passes WCAG 2.1 AA automated checks", async ({ page, context,
   await scan(page, "purchase order");
 
   for (const [path, label] of [
-    ["/", "home"],
+    ["/", "landing"],
+    ["/home", "home"],
     ["/lists", "saved lists"],
     ["/results", "past results"],
     ["/orders", "orders"],

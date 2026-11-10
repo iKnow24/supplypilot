@@ -3,7 +3,7 @@
 import { Loader2, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-import { findBestPrice } from "@/app/cart/actions";
+import { findBestPrice } from "@/app/(app)/cart/actions";
 import { Button } from "@/components/ui/button";
 
 import { useAction } from "./status";

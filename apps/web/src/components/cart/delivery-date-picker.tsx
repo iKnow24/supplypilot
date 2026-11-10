@@ -2,7 +2,7 @@
 
 import { Check, X } from "lucide-react";
 
-import { setDeliveryDate } from "@/app/cart/actions";
+import { setDeliveryDate } from "@/app/(app)/cart/actions";
 import { formatDate, isoWeekday, WEEKDAY_SHORT } from "@/lib/delivery";
 import { cn } from "@/lib/utils";
 

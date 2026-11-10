@@ -1,13 +1,13 @@
 "use client";
 
-import { ClipboardList, Home, Package, ShoppingCart, Truck } from "lucide-react";
+import { ClipboardList, Home, Package, Settings, ShoppingCart, Truck } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils";
 
 export const NAV_ITEMS = [
-  { href: "/", label: "Home", icon: Home },
+  { href: "/home", label: "Home", icon: Home },
   { href: "/cart", label: "Smart Cart", icon: ShoppingCart },
   { href: "/lists", label: "Lists", icon: ClipboardList },
   { href: "/orders", label: "Orders", icon: Package },
@@ -18,26 +18,40 @@ export function isActive(pathname: string, href: string) {
   return href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
 }
 
-/** Desktop: inline links in the header. */
+const itemClass = (active: boolean) =>
+  cn(
+    "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-[background-color,color,box-shadow]",
+    active
+      ? "bg-card text-foreground shadow-card"
+      : "text-muted-foreground hover:bg-card/70 hover:text-foreground",
+  );
+
+const iconClass = (active: boolean) =>
+  cn(
+    "size-4 shrink-0 transition-colors",
+    active ? "text-primary" : "text-muted-foreground group-hover:text-foreground",
+  );
+
+/** Tablet and up: the sidebar's main navigation. */
 export function DesktopNav() {
   const pathname = usePathname();
   return (
     <nav aria-label="Main" className="hidden md:block">
-      <ul className="flex items-center gap-1">
+      <p className="text-muted-foreground mb-2 px-3 text-[11px] font-medium tracking-[0.08em] uppercase">
+        Buying
+      </p>
+      <ul className="space-y-0.5">
         {NAV_ITEMS.map((item) => {
           const active = isActive(pathname, item.href);
+          const Icon = item.icon;
           return (
             <li key={item.href}>
               <Link
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className={cn(
-                  "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                  active
-                    ? "bg-muted text-foreground"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
+                className={itemClass(active)}
               >
+                <Icon className={iconClass(active)} aria-hidden />
                 {item.label}
               </Link>
             </li>
@@ -48,13 +62,24 @@ export function DesktopNav() {
   );
 }
 
-/** Mobile: a familiar bottom tab bar. */
+export function SettingsLink() {
+  const pathname = usePathname();
+  const active = isActive(pathname, "/settings");
+  return (
+    <Link href="/settings" aria-current={active ? "page" : undefined} className={itemClass(active)}>
+      <Settings className={iconClass(active)} aria-hidden />
+      Settings
+    </Link>
+  );
+}
+
+/** Phones: a familiar bottom tab bar. */
 export function MobileTabBar() {
   const pathname = usePathname();
   return (
     <nav
       aria-label="Main"
-      className="bg-card/95 fixed inset-x-0 bottom-0 z-40 border-t pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
+      className="bg-card/85 fixed inset-x-0 bottom-0 z-40 border-t pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden"
     >
       <ul className="grid grid-cols-5">
         {NAV_ITEMS.map((item) => {

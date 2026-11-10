@@ -3,7 +3,7 @@
 import { Search, Star } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 
-import { addToCart } from "@/app/cart/actions";
+import { addToCart } from "@/app/(app)/cart/actions";
 import { Badge } from "@/components/ui/badge";
 import type { Product } from "@/lib/catalog/schema";
 import { searchProducts } from "@/lib/cart/search";
@@ -154,7 +154,7 @@ export function ProductSearch({
           id={`${listId}-list`}
           role="listbox"
           aria-label={query.trim() ? "Matching products" : "Favorites"}
-          className="bg-popover absolute z-20 mt-1 max-h-80 w-full overflow-auto rounded-lg border p-1 shadow-lg"
+          className="bg-popover shadow-raised absolute z-20 mt-1 max-h-80 w-full overflow-auto rounded-xl border p-1"
         >
           {!query.trim() ? (
             <li
@@ -197,7 +197,7 @@ export function ProductSearch({
           ))}
         </ul>
       ) : open && query.trim() ? (
-        <p className="bg-popover text-muted-foreground absolute z-20 mt-1 w-full rounded-lg border px-4 py-3 text-sm shadow-lg">
+        <p className="bg-popover text-muted-foreground shadow-raised absolute z-20 mt-1 w-full rounded-xl border px-4 py-3 text-sm">
           No products match “{query.trim()}”.
         </p>
       ) : null}

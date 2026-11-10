@@ -12,7 +12,7 @@ import {
   type ReactNode,
 } from "react";
 
-import type { ActionResult } from "@/app/cart/actions";
+import type { ActionResult } from "@/app/(app)/cart/actions";
 import { cn } from "@/lib/utils";
 
 type Message = { kind: "ok" | "error"; text: string; id: number };
@@ -49,7 +49,7 @@ export function StatusProvider({ children }: { children: ReactNode }) {
             key={message.id}
             aria-hidden
             className={cn(
-              "pointer-events-auto flex max-w-md items-start gap-2 rounded-lg border px-4 py-2.5 text-sm shadow-lg",
+              "shadow-raised pointer-events-auto flex max-w-md items-start gap-2 rounded-xl border px-4 py-2.5 text-sm",
               message.kind === "error"
                 ? "bg-destructive-soft text-destructive border-transparent"
                 : "bg-card text-foreground",

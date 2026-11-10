@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { approveResult, reorder } from "@/app/orders/actions";
+import { approveResult, reorder } from "@/app/(app)/orders/actions";
 import { useAction } from "@/components/cart/status";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
