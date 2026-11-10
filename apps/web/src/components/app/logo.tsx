@@ -2,44 +2,100 @@ import Link from "next/link";
 
 import { cn } from "@/lib/utils";
 
-/** The mark: a rising route line in an emerald tile with a soft inner highlight. */
-export function LogoMark({ className }: { className?: string }) {
+/**
+ * The SupplyPilot mark: a compass rose drawn from grains.
+ *  - Eight points: every supplier, every direction you could buy from.
+ *  - The long gold north point is the one SupplyPilot picks.
+ *  - Each point is a grain (a wheat kernel), so it reads as food first, navigation second.
+ * Geometry lives in a 48-unit box. The rose is nudged down because the long north point
+ * pulls the eye up; the badge version sits optically centred in its circle.
+ * Fills use classes, never style attributes (the production CSP blocks inline styles).
+ */
+const GRAIN = "M0-20C5-13 5-5 0 0C-5-5-5-13 0-20Z";
+
+function Rose({ point, north }: { point: string; north: string }) {
   return (
-    <span
-      aria-hidden
-      className={cn(
-        "flex size-7 items-center justify-center rounded-[9px] bg-gradient-to-b from-[oklch(0.62_0.14_163)] to-[oklch(0.42_0.1_164)] text-white shadow-[inset_0_1px_0_oklch(1_0_0/0.3),0_1px_2px_oklch(0.2_0.05_165/0.4),0_0_0_1px_oklch(0.38_0.09_164)]",
-        className,
-      )}
-    >
-      <svg
-        viewBox="0 0 24 24"
-        className="size-4"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M4 17l6-6 4 4 6-8" />
-        <path d="M15 7h5v5" />
-      </svg>
-    </span>
+    <>
+      <g className={point} opacity={0.45}>
+        {[45, 135, 225, 315].map((r) => (
+          <path key={r} d={GRAIN} transform={`rotate(${r}) scale(.52)`} />
+        ))}
+      </g>
+      <g className={point}>
+        {[90, 180, 270].map((r) => (
+          <path key={r} d={GRAIN} transform={`rotate(${r}) scale(.8)`} />
+        ))}
+      </g>
+      <path d={GRAIN} className={north} />
+    </>
   );
 }
 
-export function Logo({ href = "/", className }: { href?: string; className?: string }) {
+export type MarkTone = "badge" | "ink" | "cream";
+
+export function LogoMark({
+  className,
+  tone = "badge",
+  title,
+}: {
+  className?: string;
+  tone?: MarkTone;
+  title?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 48 48"
+      className={cn("size-8 shrink-0", className)}
+      role={title ? "img" : undefined}
+      aria-hidden={title ? undefined : true}
+      aria-label={title}
+    >
+      {tone === "badge" ? (
+        <>
+          <circle cx="24" cy="24" r="24" className="fill-navy" />
+          <circle
+            cx="24"
+            cy="24"
+            r="21.6"
+            fill="none"
+            className="stroke-cream/20"
+            strokeWidth=".8"
+          />
+          <g transform="translate(24 25.6) scale(.8)">
+            <Rose point="fill-cream" north="fill-brass" />
+          </g>
+        </>
+      ) : (
+        <g transform="translate(24 26) scale(1.05)">
+          <Rose point={tone === "ink" ? "fill-navy" : "fill-cream"} north="fill-brass" />
+        </g>
+      )}
+    </svg>
+  );
+}
+
+/** The wordmark: Fraunces, softened, set tight. One word, one colour. */
+export function Wordmark({ className }: { className?: string }) {
+  return <span className={cn("wordmark font-display", className)}>SupplyPilot</span>;
+}
+
+export function Logo({
+  href = "/",
+  className,
+  tone = "badge",
+}: {
+  href?: string;
+  className?: string;
+  tone?: MarkTone;
+}) {
   return (
     <Link
       href={href}
-      className={cn(
-        "flex items-center gap-2.5 text-[15px] font-semibold tracking-tight",
-        className,
-      )}
+      className={cn("flex items-center gap-2.5 text-[21px] leading-none", className)}
       aria-label="SupplyPilot home"
     >
-      <LogoMark />
-      <span>SupplyPilot</span>
+      <LogoMark tone={tone} className="size-[1.6em]" />
+      <Wordmark className="-mt-[0.08em]" />
     </Link>
   );
 }

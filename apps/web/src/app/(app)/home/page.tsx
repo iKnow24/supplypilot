@@ -38,7 +38,7 @@ export default async function HomePage() {
   if (!state) {
     return (
       <div className="space-y-6">
-        <h1 className="text-3xl font-semibold tracking-[-0.03em]">{hello}.</h1>
+        <h1 className="font-display text-3xl font-medium sm:text-[40px]">{hello}.</h1>
         <PersistenceNotice persistence={persistence} />
         <Button asChild size="lg">
           <Link href="/cart">
@@ -66,7 +66,10 @@ export default async function HomePage() {
     <div className="space-y-10">
       <header className="animate-fade-up">
         <p className="text-muted-foreground text-sm">{buyer.name}</p>
-        <h1 id="hello" className="mt-1 text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">
+        <h1
+          id="hello"
+          className="font-display mt-1 text-3xl leading-[1.1] font-medium text-balance sm:text-[40px]"
+        >
           {hello}.{" "}
           <span className="text-muted-foreground">
             {short.length
@@ -139,7 +142,7 @@ export default async function HomePage() {
             </h2>
             {delivery && toOrder.length ? (
               <>
-                <p className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
+                <p className="font-display mt-2 text-3xl font-medium sm:text-[40px] sm:leading-tight">
                   {toOrder.length} item{toOrder.length === 1 ? "" : "s"} for {formatDate(delivery)}
                 </p>
                 <p className="text-muted-foreground mt-2 max-w-md text-sm">
@@ -160,7 +163,7 @@ export default async function HomePage() {
               </>
             ) : (
               <>
-                <p className="mt-2 text-3xl font-semibold tracking-tight">Nothing to order yet</p>
+                <p className="font-display mt-2 text-3xl font-medium">Nothing to order yet</p>
                 <Button asChild size="lg" className="mt-6">
                   <Link href="/cart">
                     Open Smart Cart <ArrowRight aria-hidden />
@@ -206,7 +209,7 @@ export default async function HomePage() {
           </span>
           <div className="min-w-0">
             <p className="text-muted-foreground text-xs font-medium">Verified savings</p>
-            <p className="tabular text-xl font-semibold">
+            <p className="font-display tabular text-2xl font-medium">
               {saved ? formatCents(saved.savingsCents!) : "—"}
             </p>
             <p className="text-muted-foreground truncate text-xs">
@@ -229,7 +232,7 @@ export default async function HomePage() {
           </span>
           <div className="min-w-0">
             <p className="text-muted-foreground text-xs font-medium">Last purchase order</p>
-            <p className="tabular text-xl font-semibold">
+            <p className="font-display tabular text-2xl font-medium">
               {lastOrder ? formatCents(lastOrder.total_cents) : "None yet"}
             </p>
             <p className="text-muted-foreground truncate text-xs">

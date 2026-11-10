@@ -43,7 +43,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
       <div className="min-w-0 flex-1">
         <header className="bg-background/80 sticky top-0 z-30 border-b backdrop-blur-xl md:hidden">
           <div className="flex h-14 items-center gap-3 px-4">
-            <Logo href="/home" />
+            <Logo href="/home" className="shrink-0 text-[18px]" />
             <div className="ml-auto flex items-center gap-1.5">
               <BuyerSwitcher buyers={buyers} currentId={buyer.id} compact />
               <Link

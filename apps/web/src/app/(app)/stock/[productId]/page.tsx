@@ -154,7 +154,10 @@ export default async function StockItemPage({
             <ItemIcon product={row.product} status={row.status} size="lg" />
             <div className="min-w-0 flex-1 text-center sm:text-left">
               <Badge variant={STATUS[row.status].variant}>{STATUS[row.status].label}</Badge>
-              <h1 id="item" className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+              <h1
+                id="item"
+                className="font-display mt-2 text-[28px] leading-tight font-medium sm:text-[34px]"
+              >
                 {row.product.name}
               </h1>
               <p className={cn("tabular mt-3 text-4xl font-semibold", STATUS[row.status].text)}>
