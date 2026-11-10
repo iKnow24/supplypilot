@@ -11,6 +11,13 @@ import type {
 } from "../orders/types";
 import type { DbClient } from "../supabase/server";
 import {
+  DOCUMENT_KINDS,
+  type DocumentKind,
+  type PriceImportInput,
+  type PriceImportSummary,
+  type VendorPrice,
+} from "../vendor-prices/types";
+import {
   BuyerStateError,
   type BuyerStateRepository,
   type Cart,
@@ -77,6 +84,8 @@ function toPoSummary(r: PoRow, lineCount: number): PurchaseOrderSummary {
 }
 
 const UUID = /^[0-9a-f-]{36}$/i;
+
+const toKind = (k: string): DocumentKind => DOCUMENT_KINDS.find((x) => x === k) ?? "other";
 
 function toRunSummary(r: RunSummaryRow): OptimizationRunSummary {
   return {
@@ -506,5 +515,97 @@ export class SupabaseBuyerStateRepository implements BuyerStateRepository {
       .select("id");
     if (error) fail(error, "discard the draft");
     return data.length > 0;
+  }
+
+  async savePriceImport(input: PriceImportInput) {
+    const { data, error } = await this.db.rpc("save_price_import", {
+      p_org: this.orgId,
+      p_vendor_name: input.vendorName,
+      // The generated types say string; null is what the SQL function expects for "none".
+      p_supplier_id: input.supplierId as string,
+      p_document_kind: input.documentKind,
+      p_document_date: input.documentDate as string,
+      p_lines: input.lines as unknown as Json,
+    });
+    if (error) fail(error, "save these prices");
+    return data;
+  }
+
+  async listPriceImports(limit = 50): Promise<PriceImportSummary[]> {
+    const { data, error } = await this.db
+      .from("price_imports")
+      .select(
+        "id, vendor_name, supplier_id, document_kind, document_date, created_at, vendor_prices(count)",
+      )
+      .eq("org_id", this.orgId)
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    if (error) fail(error, "load your vendor prices");
+    return data.map((r) => ({
+      id: r.id,
+      vendorName: r.vendor_name,
+      supplierId: r.supplier_id,
+      documentKind: toKind(r.document_kind),
+      documentDate: r.document_date,
+      importedAt: new Date(r.created_at),
+      lineCount: r.vendor_prices[0]?.count ?? 0,
+    }));
+  }
+
+  async listVendorPrices(filter: { productId?: string; supplierId?: string } = {}) {
+    let q = this.db
+      .from("vendor_prices")
+      .select(
+        "id, import_id, product_id, description, pack_quantity, pack_unit, pack_label, price_cents, confidence, mapping_method, price_imports!inner(vendor_name, supplier_id, document_kind, document_date, created_at)",
+      )
+      .eq("org_id", this.orgId);
+    if (filter.productId) q = q.eq("product_id", filter.productId);
+    if (filter.supplierId) q = q.eq("price_imports.supplier_id", filter.supplierId);
+    const { data, error } = await q.order("created_at", { ascending: false }).limit(2000);
+    if (error) fail(error, "load your vendor prices");
+    return data
+      .map((r): VendorPrice => ({
+        id: r.id,
+        importId: r.import_id,
+        vendorName: r.price_imports.vendor_name,
+        supplierId: r.price_imports.supplier_id,
+        productId: r.product_id,
+        description: r.description,
+        packQuantity: String(r.pack_quantity),
+        packUnit: r.pack_unit,
+        packLabel: r.pack_label,
+        priceCents: r.price_cents,
+        confidence: r.confidence === "high" || r.confidence === "medium" ? r.confidence : "low",
+        mappingMethod: r.mapping_method === "manual" ? "manual" : "ai_suggested",
+        documentKind: toKind(r.price_imports.document_kind),
+        documentDate: r.price_imports.document_date,
+        importedAt: new Date(r.price_imports.created_at),
+      }))
+      .sort((a, b) => b.importedAt.getTime() - a.importedAt.getTime());
+  }
+
+  async deletePriceImport(id: string) {
+    if (!UUID.test(id)) return false;
+    const { data, error } = await this.db
+      .from("price_imports")
+      .delete()
+      .eq("org_id", this.orgId)
+      .eq("id", id)
+      .select("id");
+    if (error) fail(error, "delete those prices");
+    return data.length > 0;
+  }
+
+  async logPriceRead() {
+    const { error } = await this.db.from("price_reads").insert({ org_id: this.orgId });
+    if (error) fail(error, "start reading the image");
+    const since = new Date(Date.now() - 3_600_000).toISOString();
+    const { count, error: countError } = await this.db
+      .from("price_reads")
+      .select("id", { count: "exact", head: true })
+      .eq("org_id", this.orgId)
+      .gte("created_at", since);
+    if (countError) fail(countError, "start reading the image");
+    return count ?? 0;
   }
 }

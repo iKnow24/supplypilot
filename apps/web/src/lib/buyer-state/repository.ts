@@ -9,6 +9,7 @@
  */
 import type { OptimizeRequest, OptimizeResponse } from "../optimizer/types";
 import type { PurchaseOrder, PurchaseOrderDraft, PurchaseOrderSummary } from "../orders/types";
+import type { PriceImportInput, PriceImportSummary, VendorPrice } from "../vendor-prices/types";
 
 export interface CartLine {
   product_id: string;
@@ -116,6 +117,17 @@ export interface BuyerStateRepository {
   markPurchaseOrderExported(id: string): Promise<Date>;
   /** Only drafts can be discarded; exported POs are permanent. */
   discardDraftPurchaseOrder(id: string): Promise<boolean>;
+
+  /** Saves one reviewed screenshot's approved prices. Atomic. Returns the import id. */
+  savePriceImport(input: PriceImportInput): Promise<string>;
+  /** Newest first. */
+  listPriceImports(limit?: number): Promise<PriceImportSummary[]>;
+  /** Buyer-provided prices, newest import first. */
+  listVendorPrices(filter?: { productId?: string; supplierId?: string }): Promise<VendorPrice[]>;
+  /** Deletes an import and its prices. False if it doesn't exist (or isn't yours). */
+  deletePriceImport(id: string): Promise<boolean>;
+  /** Logs one image sent to the AI, and returns how many were sent in the last hour. */
+  logPriceRead(): Promise<number>;
 }
 
 /** An error whose message is safe and useful to show the buyer. */

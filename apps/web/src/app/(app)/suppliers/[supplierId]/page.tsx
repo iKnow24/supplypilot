@@ -1,10 +1,11 @@
-import { ArrowLeft, MapPin } from "lucide-react";
+import { ArrowLeft, ImageUp, MapPin } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { PageHeader } from "@/components/app/page-header";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
@@ -16,11 +17,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { getRepository } from "@/lib/catalog/seed-repository";
-import { WEEKDAY_SHORT } from "@/lib/delivery";
+import { formatDate, WEEKDAY_SHORT } from "@/lib/delivery";
 import { FRESHNESS_LABEL, formatAge } from "@/lib/freshness";
 import { formatCents, formatUnitPrice } from "@/lib/money";
-import { getCurrentBuyer } from "@/lib/session";
+import { getSession } from "@/lib/session";
 import { UnitTable, unitShortLabel } from "@/lib/units";
+import { localDay } from "@/lib/vendor-prices/parse";
+import { latestQuotes } from "@/lib/vendor-prices/quotes";
+import { DOCUMENT_KIND_LABEL } from "@/lib/vendor-prices/types";
 
 export async function generateMetadata({
   params,
@@ -35,12 +39,21 @@ export default async function SupplierPage({ params }: PageProps<"/suppliers/[su
   const repo = getRepository();
   const supplier = await repo.getSupplier(supplierId);
   if (!supplier) notFound();
-  const buyer = await getCurrentBuyer();
-  const [offers, units, source] = await Promise.all([
+  const session = await getSession();
+  const buyer = session.buyer;
+  const [offers, units, source, products, vendorPrices] = await Promise.all([
     repo.listOffersForBuyer(buyer.id, { supplierId }),
     repo.units(),
     repo.source(),
+    repo.listProducts(),
+    session.state ? session.state.listVendorPrices({ supplierId }) : [],
   ]);
+  const productById = new Map(products.map((x) => [x.id, x]));
+  const quotes = latestQuotes(vendorPrices, localDay(new Date()), source.priceMaxAgeHours / 24)
+    .filter((q) => productById.has(q.productId))
+    .sort((a, b) =>
+      productById.get(a.productId)!.name.localeCompare(productById.get(b.productId)!.name),
+    );
   const table = new UnitTable(units);
   const p = supplier.policy;
   offers.sort(
@@ -99,6 +112,66 @@ export default async function SupplierPage({ params }: PageProps<"/suppliers/[su
             </p>
             <p className="text-muted-foreground">Not live pricing or stock</p>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card className="mb-6">
+        <CardContent className="pt-5 sm:pt-6">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="font-semibold tracking-tight">Your quoted prices</h2>
+              <p className="text-muted-foreground mt-0.5 text-sm">
+                {quotes.length > 0
+                  ? `From your latest ${DOCUMENT_KIND_LABEL[quotes[0]!.documentKind].toLowerCase()}, dated ${formatDate(quotes[0]!.quotedOn)}. Shown next to catalog prices on each item; Price this order doesn't use them yet.`
+                  : `Got a price list, invoice or text from ${supplier.short_name}? Add it from a screenshot.`}
+              </p>
+            </div>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/suppliers/import">
+                <ImageUp aria-hidden /> Add from a screenshot
+              </Link>
+            </Button>
+          </div>
+          {quotes.length > 0 ? (
+            <ul
+              className="mt-4 divide-y text-sm"
+              aria-label={`Your quoted prices from ${supplier.short_name}`}
+            >
+              {quotes.map((q) => {
+                const product = productById.get(q.productId)!;
+                const unitPrice = table.unitPriceCents(
+                  q.priceCents,
+                  Number(q.packQuantity),
+                  q.packUnit,
+                  product.default_unit,
+                );
+                return (
+                  <li
+                    key={q.id}
+                    className="flex flex-wrap items-center justify-between gap-3 py-2.5"
+                  >
+                    <div className="min-w-0">
+                      <Link href={`/stock/${product.id}`} className="font-medium hover:underline">
+                        {product.name}
+                      </Link>
+                      <p className="text-muted-foreground text-xs">
+                        {q.packLabel} · read as “{q.description}”
+                      </p>
+                    </div>
+                    <div className="tabular text-right">
+                      <p className="font-medium">{formatCents(q.priceCents)}</p>
+                      <p className="text-muted-foreground text-xs">
+                        {formatUnitPrice(unitPrice)}/{unitShortLabel(product.default_unit)}
+                      </p>
+                    </div>
+                    {!q.current ? (
+                      <Badge variant="warning">Quote {q.ageDays} days old</Badge>
+                    ) : null}
+                  </li>
+                );
+              })}
+            </ul>
+          ) : null}
         </CardContent>
       </Card>
 

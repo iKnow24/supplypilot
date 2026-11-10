@@ -76,6 +76,8 @@ authoritatively in Python in M3 (with the same test cases).
   previous buyer survives. Real sign-in (magic link) replaces this before any real buyer.
 - **No database? Say so.** Without Supabase configured, pages render read-only from the seed and show
   why nothing can be saved. We never pretend in-memory data persists.
+- **Buyer quotes: Postgres.** Prices a buyer adds from screenshots live in `price_imports` /
+  `vendor_prices`, next to (not inside) the seed catalog. See "Vendor prices from screenshots".
 - The web app only ever uses the publishable key; the service-role key is not used anywhere.
 
 ## Request flow ("Find My Best Price", M4)
@@ -110,6 +112,36 @@ Browser -> server action findBestPrice()
   and they check membership, that the run belongs to the org and has a plan, and that line totals
   add up. Reads and draft deletes are plain RLS.
 - SupplyPilot never sends a PO anywhere. Export is the only outbound path.
+
+## Vendor prices from screenshots
+
+Real supplier prices are negotiated, so buyers bring them in: a screenshot or photo of a price
+list, invoice, email or text from their rep.
+
+```
+/suppliers/import  pick an image (PNG/JPG/WebP; phone photos are shrunk in the browser)
+                   -> readPriceScreenshot()   server action: checks size + magic bytes, caps reads per
+                      org per hour (price_reads), sends the image to Claude (claude-opus-5-5,
+                      structured output) with the catalog's product list, returns a DRAFT. The image
+                      is never stored.
+                   -> normalize.ts            deterministic: catalog units, per-unit prices multiplied
+                      out to a pack in exact integer cents, product suggestions, anything unread or
+                      unmatched flagged "Unclear"
+                   review: every line editable, mapped to a catalog product, approved or rejected
+                   -> savePriceImport()       re-validates every line, save_price_import() (atomic)
+```
+- AI only transcribes (rule 1 above). A person reviews every line before it is saved; unmatched
+  products can't be approved.
+- Stored in `price_imports` (vendor, optional catalog supplier, document kind and date) and
+  `vendor_prices` (product, pack, pack price, AI confidence, `mapping_method` `ai_suggested` or
+  `manual`). Org-scoped RLS like the rest; no updates; deleting an import deletes its prices.
+- Shown as "Your quote" on the item page's cheapest-vendor list and the supplier page: per
+  vendor, the latest quote, dated by the document (else the upload day). Quote age uses the real
+  calendar and the same 14-day rule as catalog prices.
+- **Not used by the optimizer yet.** Feeding quotes into Find My Best Price changes the
+  optimizer contract (`api-contract.md`), so it waits for both founders to agree.
+- Tests never call the AI: unit tests inject a fake client; e2e points `ANTHROPIC_BASE_URL` at
+  `apps/web/e2e/mock-anthropic.mjs`.
 
 ## Extension points (designed, not built)
 
