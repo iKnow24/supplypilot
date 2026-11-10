@@ -20,7 +20,7 @@ import { formatDate } from "@/lib/delivery";
 import { formatCents } from "@/lib/money";
 import { getSession } from "@/lib/session";
 
-export const metadata: Metadata = { title: "Orders" };
+export const metadata: Metadata = { title: "Past orders" };
 
 export default async function OrdersPage() {
   const { persistence, state } = await getSession();
@@ -29,7 +29,7 @@ export default async function OrdersPage() {
   return (
     <div>
       <PageHeader
-        title="Orders"
+        title="Past orders"
         description="Purchase orders from the plans you approved, one per supplier."
       />
       {!state ? (
@@ -40,7 +40,7 @@ export default async function OrdersPage() {
           title="No purchase orders yet"
           action={
             <Button asChild>
-              <Link href="/cart">Go to Smart Cart</Link>
+              <Link href="/cart">Start your next order</Link>
             </Button>
           }
         >

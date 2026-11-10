@@ -7,6 +7,7 @@ import {
   ShoppingCart,
 } from "lucide-react";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import Link from "next/link";
 
 import { PersistenceNotice } from "@/components/app/persistence-notice";
@@ -15,6 +16,7 @@ import { StatusProvider } from "@/components/cart/status";
 import { ItemIcon, SliderLegend } from "@/components/stock/level";
 import { PantryTile } from "@/components/stock/pantry";
 import { Button } from "@/components/ui/button";
+import { AUTOPILOT_MANUAL_COOKIE, untouchedSinceLastPricing } from "@/lib/autopilot/autostart";
 import { currentAutopilotPlan } from "@/lib/autopilot/plan";
 import { getRepository } from "@/lib/catalog/seed-repository";
 import { formatDate } from "@/lib/delivery";
@@ -44,18 +46,20 @@ export default async function HomePage() {
         <PersistenceNotice persistence={persistence} />
         <Button asChild size="lg">
           <Link href="/cart">
-            Open Smart Cart <ArrowRight aria-hidden />
+            Open next order <ArrowRight aria-hidden />
           </Link>
         </Button>
       </div>
     );
   }
 
-  const [stock, runs, orders, lastRun] = await Promise.all([
+  const [stock, runs, orders, lastRun, cart, jar] = await Promise.all([
     loadStock({ ...session, state }),
     state.listRuns(20),
     state.listPurchaseOrders({ limit: 1 }),
     state.latestAutopilotRun(),
+    state.getCart(),
+    cookies(),
   ]);
   const short = stock.rows.filter((r) => r.status === "short");
   const toOrder = stock.rows.filter((r) => r.suggested > 0);
@@ -66,6 +70,15 @@ export default async function HomePage() {
   const mark = deliveryMark(stock);
   // Keep showing Autopilot's last plan while it's for the delivery being planned (and recent).
   const lastPlan = await currentAutopilotPlan(state, lastRun, delivery);
+  // Nobody should have to press anything: with no fresh plan, Autopilot starts by itself, unless
+  // the buyer has edited their order since it was last priced (it would replace their edits).
+  const lastPricing = runs[0] ? await state.getRun(runs[0].id) : null;
+  const autoStart =
+    !lastPlan &&
+    toOrder.length > 0 &&
+    delivery !== null &&
+    jar.get(AUTOPILOT_MANUAL_COOKIE)?.value !== "1" &&
+    untouchedSinceLastPricing(cart.lines, lastPricing?.request.lines ?? null);
 
   return (
     <StatusProvider>
@@ -135,6 +148,7 @@ export default async function HomePage() {
 
           {/* Autopilot: drafts and prices the next order, then waits for the buyer's approval. */}
           <Autopilot
+            autoStart={autoStart}
             initialPlan={lastPlan}
             deliveryDate={delivery}
             itemCount={toOrder.length}
@@ -152,7 +166,7 @@ export default async function HomePage() {
             </div>
             <Link
               href="/stock"
-              className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"
+              className="text-muted-foreground hover:text-foreground inline-flex shrink-0 items-center gap-1 text-sm whitespace-nowrap"
             >
               All stock <ArrowUpRight className="size-3.5" aria-hidden />
             </Link>

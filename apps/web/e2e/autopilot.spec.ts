@@ -60,7 +60,7 @@ test("autopilot: one tap plans and prices the order, the buyer approves the POs"
   ]) {
     await expect(steps).toContainText(step);
   }
-  await expect(steps).toContainText(/items for .*Your Smart Cart now holds this order/);
+  await expect(steps).toContainText(/items for .*Your next order now holds it/);
   await noAxeViolations(page);
 
   // Nothing is a PO until the buyer approves.
@@ -91,4 +91,40 @@ test("autopilot: the Stock page offers it too", async ({ page, context, baseURL 
   await page.getByRole("link", { name: "Or let Autopilot plan and price it" }).click();
   await expect(page).toHaveURL(/\/home#autopilot$/);
   await expect(page.getByRole("region", { name: /Your next order/ })).toBeVisible();
+});
+
+test("autopilot: opening Home plans the order by itself, but never over the buyer's edits", async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  test.setTimeout(90_000);
+  // Start from an empty order (Autopilot only runs by itself when it can't lose any edits).
+  await actAs(context, "org_thirdshift", baseURL!);
+  await page.goto("/cart", { waitUntil: "networkidle" });
+  if (await page.getByRole("button", { name: "Clear" }).isVisible()) {
+    await page.getByRole("button", { name: "Clear" }).click();
+    await page.getByRole("button", { name: "Yes, clear cart" }).click();
+  }
+
+  await context.clearCookies({ name: "sp_autopilot_manual" });
+  await page.goto("/home", { waitUntil: "networkidle" });
+  const card = page.getByRole("region", { name: /Your next order/ });
+  // No tap: the plan arrives on its own.
+  await expect(
+    card.getByRole("heading", { name: "Your next order is priced and ready to approve" }),
+  ).toBeVisible({ timeout: 30_000 });
+  await expect(
+    card.getByRole("button", { name: /^Approve and create \d+ draft POs?$/ }),
+  ).toBeVisible();
+
+  // Once the buyer edits the order, coming back to Home doesn't replan over it.
+  await page.goto("/cart", { waitUntil: "networkidle" });
+  const qty = page.getByRole("textbox", { name: /^Quantity of / }).first();
+  await qty.fill(String(Number(await qty.inputValue()) + 1));
+  await qty.press("Enter");
+  await expect(page.getByRole("status", { name: "Updates" })).toBeAttached();
+  await page.waitForTimeout(500);
+  await page.goto("/home", { waitUntil: "networkidle" });
+  await expect(card.getByRole("button", { name: /Plan it for me|Run again/ })).toBeVisible();
 });

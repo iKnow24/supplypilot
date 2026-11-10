@@ -36,7 +36,7 @@ test("phone: no sideways scrolling, tab bar reachable, flow works", async ({
 
   // Bottom tab bar replaces the header nav on phones.
   const tabs = page.getByRole("navigation", { name: "Main" }).last();
-  await expect(tabs.getByRole("link", { name: "Smart Cart" })).toBeVisible();
+  await expect(tabs.getByRole("link", { name: "Orders" })).toBeVisible();
 
   await replaceCartWithCsv(
     page,

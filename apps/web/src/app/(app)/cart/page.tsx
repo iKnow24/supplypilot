@@ -24,7 +24,7 @@ import { getSession } from "@/lib/session";
 
 import { loadSavedListAndOpen } from "./actions";
 
-export const metadata: Metadata = { title: "Smart Cart" };
+export const metadata: Metadata = { title: "Next order" };
 
 export default async function CartPage({ searchParams }: PageProps<"/cart">) {
   const { error, from } = await searchParams;
@@ -40,7 +40,7 @@ export default async function CartPage({ searchParams }: PageProps<"/cart">) {
   if (!state) {
     return (
       <div>
-        <PageHeader title="Smart Cart" />
+        <PageHeader title="Next order" />
         <PersistenceNotice persistence={persistence} />
         <EmptyState icon={ShoppingCart} title="Your cart needs the database">
           Carts and saved lists are stored per business in the database, so they stay private and
@@ -101,7 +101,7 @@ export default async function CartPage({ searchParams }: PageProps<"/cart">) {
   return (
     <StatusProvider>
       <PageHeader
-        title="Smart Cart"
+        title="Next order"
         description="Add what you need. We find the lowest total delivered cost across your suppliers."
         actions={<CartToolbar defaultName={defaultListName} hasLines={cart.lines.length > 0} />}
       />
