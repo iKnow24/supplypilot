@@ -48,6 +48,19 @@
 @theme inline {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
+
+  /* Landing page: a warm market palette (cream, forest green, tomato, butter). */
+  --color-cream: oklch(0.977 0.012 85);
+  --color-sand: oklch(0.94 0.025 80);
+  --color-kraft: oklch(0.88 0.045 75);
+  --color-ink: oklch(0.24 0.025 160);
+  --color-ink-soft: oklch(0.45 0.02 160);
+  --color-forest: oklch(0.4 0.085 158);
+  --color-forest-deep: oklch(0.3 0.06 160);
+  --color-leaf: oklch(0.93 0.04 155);
+  --color-tomato: oklch(0.55 0.17 33);
+  --color-butter: oklch(0.86 0.13 88);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -83,11 +96,7 @@
 
   --animate-fade-up: fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
   --animate-fade-in: fade-in 0.9s ease-out both;
-  --animate-glow: glow 6s ease-in-out infinite;
-  --animate-shimmer: shimmer 2.4s linear infinite;
-  --animate-marquee: marquee 40s linear infinite;
   --animate-float: float 7s ease-in-out infinite;
-  --animate-ping-slow: ping-slow 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
 
   @keyframes fade-up {
     from {
@@ -109,25 +118,6 @@
       opacity: 1;
     }
   }
-  @keyframes glow {
-    0%,
-    100% {
-      opacity: 0.55;
-      scale: 1;
-    }
-    50% {
-      opacity: 0.85;
-      scale: 1.06;
-    }
-  }
-  @keyframes shimmer {
-    from {
-      background-position: 200% 0;
-    }
-    to {
-      background-position: -200% 0;
-    }
-  }
   @keyframes float {
     0%,
     100% {
@@ -135,21 +125,6 @@
     }
     50% {
       translate: 0 -8px;
-    }
-  }
-  @keyframes ping-slow {
-    75%,
-    100% {
-      transform: scale(2.4);
-      opacity: 0;
-    }
-  }
-  @keyframes marquee {
-    from {
-      transform: translateX(0);
-    }
-    to {
-      transform: translateX(-50%);
     }
   }
 }
@@ -213,80 +188,58 @@
     background-size: 18px 18px;
   }
 
-  /* ------------------------------------------------------------------ landing (dark) */
-  .landing {
-    --l-bg: oklch(0.145 0.006 250);
-    --l-surface: oklch(0.19 0.007 250);
-    --l-line: oklch(1 0 0 / 0.09);
-    --l-text: oklch(0.97 0.002 250);
-    --l-muted: oklch(0.74 0.01 256);
-    --l-accent: oklch(0.8 0.15 163);
-    background: var(--l-bg);
-    color: var(--l-text);
-    color-scheme: dark;
+  /* ------------------------------------------------------------------ landing (market) */
+  .market {
+    background: var(--color-cream);
+    color: var(--color-ink);
+    color-scheme: light;
   }
-  .landing :focus-visible {
-    outline-color: var(--l-accent);
+  .market :focus-visible {
+    outline-color: var(--color-forest);
   }
-  .landing-grid {
-    background-image:
-      linear-gradient(to right, oklch(1 0 0 / 0.045) 1px, transparent 1px),
-      linear-gradient(to bottom, oklch(1 0 0 / 0.045) 1px, transparent 1px);
-    background-size: 56px 56px;
-    mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 40%, transparent 100%);
+  .market .font-display {
+    font-variation-settings:
+      "SOFT" 50,
+      "WONK" 0;
+    letter-spacing: -0.02em;
   }
-  .text-shine {
-    background: linear-gradient(180deg, #fff 30%, oklch(0.8 0.01 256) 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+  /* A paper card: white, hairline, soft warm shadow. */
+  .paper {
+    background: white;
+    border: 1px solid oklch(0.24 0.025 160 / 0.09);
+    box-shadow:
+      0 1px 2px oklch(0.3 0.04 70 / 0.06),
+      0 12px 32px -12px oklch(0.3 0.04 70 / 0.18);
   }
-  .text-emerald-shine {
-    background: linear-gradient(
-      100deg,
-      oklch(0.86 0.15 163),
-      oklch(0.82 0.13 190) 50%,
-      oklch(0.86 0.15 163)
-    );
-    background-size: 200% 100%;
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-  /* A 1px gradient border via a masked pseudo-element. */
-  .glow-border {
+  /* Grocery-flyer price tag: a tomato tag with a punched hole. */
+  .price-tag {
     position: relative;
-    isolation: isolate;
+    background: var(--color-tomato);
+    color: white;
+    border-radius: 0.5rem 0.5rem 0.5rem 0.5rem;
+    padding-left: 1.4rem;
   }
-  .glow-border::before {
+  .price-tag::before {
     content: "";
     position: absolute;
-    inset: 0;
-    padding: 1px;
-    border-radius: inherit;
-    background: linear-gradient(
-      180deg,
-      oklch(1 0 0 / 0.22),
-      oklch(1 0 0 / 0.05) 40%,
-      oklch(0.8 0.15 163 / 0.35)
-    );
-    mask:
-      linear-gradient(#000 0 0) content-box,
-      linear-gradient(#000 0 0);
-    mask-composite: exclude;
-    pointer-events: none;
-    z-index: 1;
+    left: 0.5rem;
+    top: 50%;
+    width: 0.45rem;
+    height: 0.45rem;
+    margin-top: -0.225rem;
+    border-radius: 999px;
+    background: white;
   }
-  .landing-card {
-    background: linear-gradient(180deg, oklch(0.21 0.007 250), oklch(0.175 0.006 250));
-    border: 1px solid var(--l-line);
-    box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.06);
+  /* Hand-drawn underline under a headline word. */
+  .scribble {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 12' preserveAspectRatio='none'%3E%3Cpath d='M2 8c40-6 90-7 196-2' fill='none' stroke='%23e9b934' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: 0 92%;
+    background-size: 100% 0.32em;
+    padding-bottom: 0.06em;
   }
-  .landing-faq summary::-webkit-details-marker {
+  .market-faq summary::-webkit-details-marker {
     display: none;
-  }
-  .landing-card:hover {
-    border-color: oklch(1 0 0 / 0.16);
   }
 
   /* Reveal sections as they scroll in, where the browser supports scroll timelines. */

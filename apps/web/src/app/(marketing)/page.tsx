@@ -1,101 +1,177 @@
 import {
   ArrowRight,
   BadgeCheck,
+  CalendarClock,
   Check,
   ClipboardList,
   FileDown,
   Gauge,
   Lock,
-  Minus,
-  PackageSearch,
+  Package,
   Plus,
-  Send,
+  Receipt,
   ShieldCheck,
   Sigma,
   Sparkles,
+  Tag,
   Telescope,
+  TimerReset,
   Truck,
 } from "lucide-react";
 import type { Metadata } from "next";
+import { Fraunces } from "next/font/google";
 import Link from "next/link";
 import { connection } from "next/server";
 import type { ReactNode } from "react";
 
 import { LogoMark } from "@/components/app/logo";
-import { Bento } from "@/components/landing/bento";
 import { EngineDemo } from "@/components/landing/engine-demo";
-import { ProductMockup } from "@/components/landing/product-mockup";
+import { Photo } from "@/components/landing/photo";
 import { cn } from "@/lib/utils";
 
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-fraunces",
+  axes: ["SOFT", "WONK", "opsz"],
+  display: "swap",
+});
+
 export const metadata: Metadata = {
-  title: { absolute: "SupplyPilot · The lowest delivered cost, explained" },
+  title: { absolute: "SupplyPilot · Buy your kitchen's ingredients for less" },
   description:
-    "Purchasing for independent restaurants, cafés and bakeries. One list, every supplier, the lowest total delivered cost, and exactly why.",
+    "For independent bakeries, cafés and restaurants. One list, every supplier, the lowest total delivered cost, and exactly why.",
 };
 
-const FACTORS = [
-  "Delivery fees",
-  "Order minimums",
-  "Free-delivery thresholds",
-  "Pack sizes",
-  "Contract prices",
-  "Volume tiers",
-  "Delivery days",
-  "Order cutoffs",
-  "Stock on hand",
-  "Price freshness",
+/* ------------------------------------------------------------------ content */
+
+const KITCHENS = [
+  { photo: "bakery-bread", label: "Bakeries" },
+  { photo: "cafe-milk", label: "Cafés" },
+  { photo: "restaurant-cook", label: "Restaurants" },
+  { photo: "produce-crate", label: "Produce" },
+  { photo: "eggs", label: "Dairy & eggs" },
+  { photo: "flour-butter", label: "Baking staples" },
+  { photo: "po-box", label: "Packaging" },
 ];
 
-const BEFORE_AFTER = [
-  ["Four vendor portals, a phone call and a text thread", "One list for every supplier"],
-  ["Item prices compared in your head", "Total delivered cost: fees, minimums, packs"],
-  ["You find the minimum at checkout", "Minimums and cutoffs checked before you commit"],
-  ["Last month's price sheet", "Out-of-date prices and stock left out, automatically"],
-  ["Retype every order, vendor by vendor", "A draft PO per supplier, ready to send"],
-] as const;
+/** Real optimizer results on the demo catalog (fictional suppliers, fixed demo clock). */
+const DEALS = [
+  {
+    photo: "milk",
+    title: "The weekly milk run",
+    who: "Third Shift Coffee · Wed, Nov 11",
+    total: "$132.60",
+    tag: "Save $18.30",
+    vs: "vs $150.90 at the supplier with the cheapest item prices",
+    why: "Pelican's $45 delivery fee wipes out its lower prices. Meadowlark wins, delivered.",
+  },
+  {
+    photo: "cafe-milk",
+    title: "Cups, lids & napkins",
+    who: "Third Shift Coffee · paper goods",
+    total: "$489.30",
+    tag: "Save $52.30",
+    vs: "vs $541.60 for the same order on Saturday",
+    why: "Only Pelican delivers Saturday. Move it to Wednesday and Kestrel can, for less.",
+  },
+  {
+    photo: "produce-crate",
+    title: "Onions & tomatoes",
+    who: "Little Juniper · Mon, Nov 9",
+    total: "$113.70",
+    tag: "Minimum checked",
+    vs: "Kestrel looked cheaper, at about $88.30",
+    why: "Kestrel has a $400 minimum. You find out now, not at checkout.",
+  },
+];
+
+const FACTORS = [
+  {
+    icon: Truck,
+    title: "Delivery fees & free-delivery thresholds",
+    body: "A $45 fee can erase a week of cheaper prices. Every fee is counted, and waived when you pass a threshold.",
+  },
+  {
+    icon: Receipt,
+    title: "Order minimums",
+    body: "Suppliers whose minimum you can't reach are ruled out up front, with the reason in plain English.",
+  },
+  {
+    icon: CalendarClock,
+    title: "Delivery days & cutoffs",
+    body: "Pick the day you need it. See who can deliver, and the time you have to order by.",
+  },
+  {
+    icon: Package,
+    title: "Pack sizes",
+    body: "Ask in pounds, quarts or each. We round up to real cases and show exactly how much extra you get.",
+  },
+  {
+    icon: Tag,
+    title: "Your contract prices",
+    body: "The lowest of your contract price, the list price and any volume tier, line by line.",
+  },
+  {
+    icon: TimerReset,
+    title: "Fresh data only",
+    body: "Prices and stock counts past their freshness limit are left out, and the plan tells you so.",
+  },
+];
 
 const STEPS = [
   {
+    photo: "flour-butter",
     icon: ClipboardList,
     title: "Build one list",
-    body: "Load last week's order, search the catalog, or drop in a CSV. Pick the day you need it.",
+    body: "Load last week's order, search the catalog, or drop in a spreadsheet. Pick the day you need it.",
   },
   {
+    photo: "market-stall",
     icon: Sparkles,
     title: "Find My Best Price",
-    body: "Every supplier and every rule, solved exactly in seconds. Alternatives come with the trade-off spelled out.",
+    body: "Every supplier and every rule, solved exactly in seconds, with the trade-offs spelled out.",
   },
   {
+    photo: "po-box",
     icon: FileDown,
-    title: "Approve, download, send",
-    body: "One draft PO per supplier, ready as PDF or CSV. You send it; we never order anything for you.",
+    title: "Approve and send",
+    body: "One draft purchase order per supplier, as PDF or CSV. You send it; nothing goes out without you.",
   },
 ];
 
-const PROOF = [
+/** Sunday Crumb Bakery's real rows from the demo Stock page (fixed demo clock). */
+const STOCK_ROWS = [
   {
-    icon: Sigma,
-    stat: "Exact",
-    label: "Integer optimization, not a guess",
-    body: "Every pack, fee, minimum and stock limit goes into one model, solved to the cent. The same order always gets the same answer.",
+    item: "All-purpose flour",
+    onHand: "4.3 lb",
+    use: "288 lb/wk",
+    runsOut: "Today",
+    order: "572 lb",
+    bars: ["h-3", "h-4", "h-3.5", "h-4", "h-4.5", "h-4", "h-5", "h-5.5"],
   },
   {
-    icon: Gauge,
-    stat: "400",
-    label: "Random baskets checked on every test run",
-    body: "Each one is cross-checked against brute force, including partial and impossible orders, before any change ships.",
+    item: "Unsalted butter",
+    onHand: "15.3 lb",
+    use: "70 lb/wk",
+    runsOut: "Tomorrow",
+    order: "126 lb",
+    bars: ["h-4", "h-4", "h-4.5", "h-4", "h-4.5", "h-4", "h-5", "h-4.5"],
   },
   {
-    icon: Lock,
-    stat: "Per buyer",
-    label: "Row-level security in Postgres",
-    body: "Carts, lists, results and orders are walled off per business in the database itself, not just in the app.",
+    item: "Pastry boxes",
+    onHand: "32",
+    use: "197/wk",
+    runsOut: "Tomorrow",
+    order: "362",
+    bars: ["h-3", "h-3.5", "h-3", "h-4", "h-4", "h-4.5", "h-5", "h-5.5"],
   },
   {
-    icon: BadgeCheck,
-    stat: "WCAG AA",
-    label: "Accessible on every screen",
-    body: "Automated accessibility checks, a keyboard-only run of the whole flow and a phone layout test in every CI run.",
+    item: "Whole milk",
+    onHand: "4.1 gal",
+    use: "7.6 gal/wk",
+    runsOut: "In 3 days",
+    order: "11 gal",
+    bars: ["h-4", "h-3.5", "h-4", "h-4", "h-4.5", "h-4", "h-4.5", "h-5"],
   },
 ];
 
@@ -117,25 +193,11 @@ const PRINCIPLES = [
   },
 ];
 
-const ROADMAP = [
-  {
-    icon: Truck,
-    status: "Live",
-    title: "Price every order",
-    body: "One list, every supplier, the lowest delivered cost with its reasons, and draft POs.",
-  },
-  {
-    icon: PackageSearch,
-    status: "In development",
-    title: "Know what's running low",
-    body: "Stock on hand and weekly usage turn into a suggested order before you run out.",
-  },
-  {
-    icon: Send,
-    status: "Planned",
-    title: "Send it, with your OK",
-    body: "Approved orders go to each vendor the way they already take them: email or text to the rep.",
-  },
+const PROOF = [
+  { icon: Sigma, stat: "Exact", label: "Integer optimization, solved to the cent" },
+  { icon: Gauge, stat: "400", label: "Random orders checked against brute force every test run" },
+  { icon: Lock, stat: "Private", label: "Each business walled off in the database itself" },
+  { icon: BadgeCheck, stat: "WCAG AA", label: "Accessibility checks on every screen" },
 ];
 
 const FAQ = [
@@ -152,20 +214,38 @@ const FAQ = [
     a: "Against the supplier you usually buy each item from. If we can't price your usual supplier for an item, we don't claim a saving on it, and if your usual suppliers are already cheapest, we tell you.",
   },
   {
-    q: "What happens when an order can't be filled exactly?",
-    a: "You get the best order for everything that can be bought, and each item left out comes with its reason: no one delivers that day, not enough stock, or a minimum that can't be reached.",
+    q: "How does it know what I'm running low on?",
+    a: "From your last shelf count and how fast you've used each item over the past four weeks. It sizes each order to last until the delivery arrives, then seven more days, plus a two-day buffer.",
   },
   {
     q: "Who is it for?",
-    a: "Independent restaurants, cafés and bakeries that buy from several distributors every week and want the lowest total cost without a spreadsheet.",
+    a: "Independent bakeries, cafés and restaurants that buy from several distributors every week and want the lowest total cost without a spreadsheet.",
   },
 ];
 
-function PrimaryCta({ children = "Open the live demo" }: { children?: string }) {
+/* ------------------------------------------------------------------ pieces */
+
+function Cta({
+  href = "/home",
+  children,
+  variant = "primary",
+  className,
+}: {
+  href?: string;
+  children: ReactNode;
+  variant?: "primary" | "light";
+  className?: string;
+}) {
   return (
     <Link
-      href="/home"
-      className="group inline-flex h-12 items-center justify-center gap-2 rounded-full bg-white px-7 text-sm font-semibold text-zinc-950 shadow-[0_0_0_1px_oklch(1_0_0/0.3),0_8px_30px_-6px_oklch(0.8_0.15_163/0.55)] transition-[transform,box-shadow] hover:shadow-[0_0_0_1px_oklch(1_0_0/0.5),0_10px_40px_-6px_oklch(0.8_0.15_163/0.75)] active:translate-y-px"
+      href={href}
+      className={cn(
+        "group inline-flex h-12 items-center justify-center gap-2 rounded-full px-7 text-[15px] font-semibold transition-all active:translate-y-px",
+        variant === "primary" &&
+          "bg-forest hover:bg-forest-deep text-white shadow-[0_10px_24px_-10px_oklch(0.4_0.085_158/0.8)]",
+        variant === "light" && "text-forest-deep hover:bg-cream bg-white",
+        className,
+      )}
     >
       {children}
       <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden />
@@ -173,87 +253,72 @@ function PrimaryCta({ children = "Open the live demo" }: { children?: string }) 
   );
 }
 
-function SectionHead({
-  eyebrow,
-  id,
-  title,
-  children,
-  center = false,
-}: {
-  eyebrow: string;
-  id: string;
-  title: ReactNode;
-  children?: ReactNode;
-  center?: boolean;
-}) {
+function Eyebrow({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className={cn("reveal max-w-2xl", center && "mx-auto text-center")}>
-      <p
-        className={cn(
-          "inline-flex items-center gap-2 text-xs font-semibold tracking-[0.16em] text-emerald-300 uppercase",
-        )}
-      >
-        <span aria-hidden className="h-px w-6 bg-emerald-300/60" />
-        {eyebrow}
-      </p>
-      <h2
-        id={id}
-        className="text-shine mt-4 text-3xl leading-[1.08] font-semibold tracking-[-0.035em] sm:text-5xl"
-      >
-        {title}
-      </h2>
-      {children ? (
-        <p className="mt-5 text-base leading-relaxed text-[var(--l-muted)] sm:text-lg">
-          {children}
-        </p>
-      ) : null}
-    </div>
+    <p className={cn("text-forest text-[13px] font-bold tracking-[0.16em] uppercase", className)}>
+      {children}
+    </p>
   );
 }
 
-/** Small annotation chips around the hero mockup (decorative; md+ only). */
-function Callout({ className, children }: { className: string; children: ReactNode }) {
+function H2({ id, children, className }: { id: string; children: ReactNode; className?: string }) {
   return (
-    <div
-      aria-hidden
+    <h2
+      id={id}
       className={cn(
-        "animate-float absolute z-10 hidden items-center gap-2 rounded-full border border-white/15 bg-[oklch(0.22_0.008_250/0.85)] px-3.5 py-2 text-xs font-medium text-zinc-100 shadow-[0_12px_40px_-8px_oklch(0_0_0/0.6)] backdrop-blur-md xl:flex",
+        "font-display text-ink mt-3 text-4xl leading-[1.05] font-semibold sm:text-5xl lg:text-[3.5rem]",
         className,
       )}
     >
       {children}
-    </div>
+    </h2>
   );
 }
+
+/* ------------------------------------------------------------------ page */
 
 export default async function LandingPage() {
   // Render per request so Next can stamp its scripts with this request's CSP nonce.
   await connection();
   return (
-    <div className="landing min-h-dvh overflow-x-clip">
-      {/* ------------------------------------------------------------------ nav */}
-      <header className="fixed inset-x-0 top-0 z-50">
-        <div className="mx-auto mt-3 flex h-14 max-w-6xl items-center gap-6 rounded-full border border-white/10 bg-[oklch(0.17_0.006_250/0.7)] px-3 pl-5 backdrop-blur-xl max-sm:mx-3">
+    <div className={cn("market min-h-dvh overflow-x-clip", fraunces.variable)}>
+      {/* ------------------------------------------------------------ promo bar */}
+      <div className="bg-forest-deep text-cream">
+        <p className="mx-auto flex max-w-7xl items-center justify-center gap-2 px-5 py-2.5 text-center text-[13px] font-medium">
+          <span className="bg-butter text-ink rounded-full px-2 py-0.5 text-[11px] font-bold tracking-wide uppercase">
+            New
+          </span>
+          <span>SupplyPilot now tracks what&apos;s running low and drafts your weekly order.</span>
+          <a href="#stock" className="hidden underline underline-offset-2 sm:inline">
+            See how
+          </a>
+        </p>
+      </div>
+
+      {/* ------------------------------------------------------------ header */}
+      <header className="border-ink/10 bg-cream/90 sticky top-0 z-50 border-b backdrop-blur-md">
+        <div className="mx-auto flex h-16 max-w-7xl items-center gap-8 px-5">
           <Link
             href="/"
-            className="flex items-center gap-2.5 text-[15px] font-semibold tracking-tight"
+            className="text-ink flex items-center gap-2.5 text-lg font-bold tracking-tight"
             aria-label="SupplyPilot home"
           >
-            <LogoMark />
+            <LogoMark className="size-8 rounded-[10px]" />
             <span>SupplyPilot</span>
           </Link>
-          <nav aria-label="Sections" className="hidden md:block">
-            <ul className="flex gap-1 text-sm text-[var(--l-muted)]">
+          <nav aria-label="Sections" className="hidden lg:block">
+            <ul className="text-ink-soft flex gap-1 text-[15px] font-semibold">
               {[
-                ["#engine", "Product"],
+                ["#savings", "Savings"],
                 ["#how", "How it works"],
+                ["#stock", "Stock"],
                 ["#honest", "Our promise"],
                 ["#faq", "FAQ"],
               ].map(([href, label]) => (
                 <li key={href}>
                   <a
                     href={href}
-                    className="rounded-full px-3 py-1.5 transition-colors hover:bg-white/5 hover:text-white"
+                    className="hover:text-ink rounded-full px-3 py-2 transition-colors hover:bg-white"
                   >
                     {label}
                   </a>
@@ -263,464 +328,572 @@ export default async function LandingPage() {
           </nav>
           <Link
             href="/home"
-            className="ml-auto inline-flex h-9 items-center gap-1.5 rounded-full bg-white px-4 text-sm font-semibold text-zinc-950 transition-colors hover:bg-zinc-200"
+            className="bg-forest hover:bg-forest-deep ml-auto inline-flex h-10 items-center gap-1.5 rounded-full px-5 text-sm font-semibold text-white transition-colors"
           >
-            Live demo <ArrowRight className="size-3.5" aria-hidden />
+            Try the live demo <ArrowRight className="size-3.5" aria-hidden />
           </Link>
         </div>
       </header>
 
       <main id="main" tabIndex={-1} className="outline-none">
-        {/* ------------------------------------------------------------------ hero */}
-        <section aria-labelledby="hero-title" className="relative isolate pt-36 sm:pt-44">
-          <div aria-hidden className="landing-grid absolute inset-0 -z-10" />
+        {/* ------------------------------------------------------------ hero */}
+        <section aria-labelledby="hero-title" className="relative isolate">
           <div
             aria-hidden
-            className="animate-glow absolute top-24 left-1/2 -z-10 h-[520px] w-[900px] max-w-[140vw] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,oklch(0.7_0.15_163/0.32),transparent)] blur-2xl"
+            className="bg-sand absolute inset-y-0 right-0 -z-10 hidden w-[42%] rounded-bl-[5rem] lg:block"
           />
-          <div className="stagger mx-auto max-w-4xl px-5 text-center">
-            <Link
-              href="/home"
-              className="group mx-auto inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] py-1 pr-3 pl-1 text-xs text-zinc-300 transition-colors hover:border-white/20"
-            >
-              <span className="flex items-center gap-1.5 rounded-full bg-emerald-400/15 px-2 py-0.5 font-medium text-emerald-300">
-                <span className="relative flex size-1.5">
-                  <span className="animate-ping-slow absolute inline-flex size-full rounded-full bg-emerald-300" />
-                  <span className="relative inline-flex size-1.5 rounded-full bg-emerald-300" />
-                </span>
-                Live
-              </span>
-              Purchasing for independent kitchens
-              <ArrowRight
-                className="size-3 transition-transform group-hover:translate-x-0.5"
-                aria-hidden
-              />
-            </Link>
-            <h1
-              id="hero-title"
-              className="text-shine mt-7 text-[2.75rem] leading-[1.02] font-semibold tracking-[-0.045em] sm:text-7xl lg:text-[5.25rem]"
-            >
-              Stop overpaying for{" "}
-              <span className="text-emerald-shine animate-shimmer">every delivery.</span>
-            </h1>
-            <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-[var(--l-muted)] sm:text-lg">
-              One list, every supplier. SupplyPilot finds the lowest total delivered cost for your
-              restaurant, café or bakery, counting fees, minimums, pack sizes and delivery days,
-              then shows you exactly why.
-            </p>
-            <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <PrimaryCta />
-              <a
-                href="#engine"
-                className="inline-flex h-12 items-center gap-2 rounded-full border border-white/10 px-6 text-sm font-medium text-zinc-200 transition-colors hover:border-white/20 hover:bg-white/5 hover:text-white"
+          <div className="mx-auto grid max-w-7xl items-center gap-14 px-5 pt-14 pb-20 sm:pt-20 lg:grid-cols-[1.05fr_1fr] lg:gap-10 lg:pb-28">
+            <div className="stagger">
+              <Eyebrow>For independent bakeries, cafés &amp; restaurants</Eyebrow>
+              <h1
+                id="hero-title"
+                className="font-display text-ink mt-5 text-[3.1rem] leading-[0.98] font-semibold sm:text-7xl lg:text-[5.4rem]"
               >
-                See it decide
-              </a>
-            </div>
-            <ul className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-zinc-400">
-              {["No sign-up", "Fictional suppliers", "Nothing is ever ordered"].map((t) => (
-                <li key={t} className="flex items-center gap-1.5">
-                  <Check className="size-3.5 text-emerald-300" aria-hidden /> {t}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="animate-fade-up relative mx-auto mt-16 max-w-5xl px-4 [animation-delay:350ms] [perspective:2000px] sm:mt-20 sm:px-6">
-            <Callout className="-top-5 -left-16">
-              <span className="flex size-5 items-center justify-center rounded-full bg-rose-400/20 text-rose-300">
-                <Truck className="size-3" />
-              </span>
-              Pelican&apos;s $45 delivery fee caught
-            </Callout>
-            <Callout className="-top-5 -right-16 [animation-delay:1.2s]">
-              <span className="flex size-5 items-center justify-center rounded-full bg-emerald-400/20 text-emerald-300">
-                <Check className="size-3" />
-              </span>
-              $18.30 less, delivered Wednesday
-            </Callout>
-            <div className="origin-top transition-transform duration-700 md:[transform:rotateX(8deg)] md:hover:[transform:rotateX(0deg)]">
-              <ProductMockup />
-            </div>
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[var(--l-bg)] to-transparent"
-            />
-          </div>
-        </section>
-
-        {/* ------------------------------------------------------------------ factors */}
-        <section aria-labelledby="factors-title" className="border-y border-white/5 py-10">
-          <h2
-            id="factors-title"
-            className="text-center text-xs font-medium tracking-[0.18em] text-zinc-400 uppercase"
-          >
-            Every order is priced on
-          </h2>
-          <div className="relative mt-6 overflow-hidden [mask-image:linear-gradient(to_right,transparent,#000_15%,#000_85%,transparent)]">
-            <div className="animate-marquee flex w-max gap-3 hover:[animation-play-state:paused]">
-              {[0, 1].map((copy) => (
-                <ul
-                  key={copy}
-                  aria-hidden={copy === 1 ? true : undefined}
-                  className="flex shrink-0 gap-3"
+                Stop overpaying for <span className="scribble text-forest">every delivery.</span>
+              </h1>
+              <p className="text-ink-soft mt-7 max-w-xl text-lg leading-relaxed sm:text-xl">
+                Put this week&apos;s order on one list. SupplyPilot checks every supplier&apos;s
+                prices, delivery fees, minimums and delivery days, and tells you exactly where to
+                buy each item for the lowest total.
+              </p>
+              <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+                <Cta>Open the live demo</Cta>
+                <a
+                  href="#savings"
+                  className="border-ink/15 text-ink hover:border-ink/30 inline-flex h-12 items-center justify-center rounded-full border-2 bg-white px-7 text-[15px] font-semibold transition-colors"
                 >
-                  {FACTORS.map((f) => (
-                    <li
-                      key={f}
-                      className="rounded-full border border-white/10 bg-white/[0.03] px-4 py-1.5 text-sm whitespace-nowrap text-zinc-300"
-                    >
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ------------------------------------------------------------------ problem */}
-        <section aria-labelledby="problem-title" className="mx-auto max-w-6xl px-5 py-24 sm:py-32">
-          <div className="grid gap-12 lg:grid-cols-[1fr_1.15fr] lg:items-center lg:gap-16">
-            <SectionHead eyebrow="The problem" id="problem-title" title="Ordering is a second job.">
-              Independent kitchens buy from several distributors every week, each with its own
-              prices, pack sizes, fees, minimums and delivery days. The cheapest-looking item is
-              often not the cheapest order, and nobody has time to work that out at 10 PM.
-            </SectionHead>
-            <div className="landing-card reveal overflow-hidden rounded-2xl">
-              <div className="grid grid-cols-2 border-b border-white/[0.07] text-xs font-semibold tracking-[0.12em] uppercase">
-                <p className="px-4 py-3.5 text-zinc-400 sm:px-5">Today</p>
-                <p className="border-l border-white/[0.07] bg-emerald-400/[0.06] px-4 py-3.5 text-emerald-300 sm:px-5">
-                  With SupplyPilot
-                </p>
+                  See real savings
+                </a>
               </div>
-              <ul className="divide-y divide-white/[0.06]">
-                {BEFORE_AFTER.map(([before, after]) => (
-                  <li key={before} className="grid grid-cols-2 text-sm">
-                    <p className="flex gap-2.5 px-4 py-4 text-[13px] text-zinc-400 sm:px-5 sm:text-sm">
-                      <Minus
-                        className="mt-0.5 size-4 shrink-0 text-zinc-600 max-sm:hidden"
-                        aria-hidden
-                      />
-                      {before}
-                    </p>
-                    <p className="flex gap-2.5 border-l border-white/[0.07] bg-emerald-400/[0.03] px-4 py-4 text-[13px] text-zinc-100 sm:px-5 sm:text-sm">
-                      <Check
-                        className="mt-0.5 size-4 shrink-0 text-emerald-300 max-sm:hidden"
-                        aria-hidden
-                      />
-                      {after}
-                    </p>
+              <ul className="text-ink-soft mt-7 flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium">
+                {["No sign-up", "Fictional suppliers", "Nothing is ever ordered"].map((t) => (
+                  <li key={t} className="flex items-center gap-1.5">
+                    <span className="bg-leaf text-forest flex size-5 items-center justify-center rounded-full">
+                      <Check className="size-3" aria-hidden />
+                    </span>
+                    {t}
                   </li>
                 ))}
               </ul>
             </div>
-          </div>
-        </section>
 
-        {/* ------------------------------------------------------------------ engine */}
-        <section
-          id="engine"
-          aria-labelledby="engine-title"
-          className="relative isolate scroll-mt-24 border-t border-white/5 py-24 sm:py-32"
-        >
-          <div
-            aria-hidden
-            className="absolute top-40 left-1/2 -z-10 h-[420px] w-[1000px] max-w-[160vw] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,oklch(0.7_0.15_163/0.14),transparent)] blur-2xl"
-          />
-          <div className="mx-auto max-w-6xl px-5">
-            <SectionHead
-              eyebrow="See it decide"
-              id="engine-title"
-              title="The cheapest items aren't the cheapest order."
-              center
-            >
-              Flip the switch and watch the answer change. These are real results from our optimizer
-              on the demo catalog.
-            </SectionHead>
-            <div className="reveal mt-14">
-              <EngineDemo />
+            {/* collage */}
+            <div className="animate-fade-up relative mx-auto w-full max-w-xl [animation-delay:200ms] lg:max-w-none">
+              <Photo
+                src="hero-bakery"
+                eager
+                alt="Bakers behind a counter full of fresh bread and pastries"
+                className="aspect-[4/4.4] w-full rounded-[2.25rem] shadow-[0_30px_60px_-30px_oklch(0.3_0.04_70/0.6)] sm:ml-auto sm:w-[86%]"
+              />
+              <div className="absolute -bottom-8 left-0 w-[44%] -rotate-3 rounded-2xl bg-white p-2 pb-3 shadow-[0_20px_40px_-18px_oklch(0.3_0.04_70/0.55)] max-sm:hidden">
+                <Photo src="bakery-bread" eager className="aspect-[4/3] w-full rounded-xl" />
+                <p className="text-ink mt-2 px-1 text-xs font-bold">Sunday Crumb Bakery</p>
+                <p className="text-ink-soft px-1 text-[11px]">14 items · 3 usual suppliers</p>
+              </div>
+
+              {/* the receipt */}
+              <div
+                aria-hidden
+                className="paper animate-float absolute top-8 right-2 w-60 rounded-2xl p-4 max-sm:hidden sm:-right-6 sm:w-64"
+              >
+                <div className="flex items-center justify-between">
+                  <p className="text-ink text-sm font-bold">Wednesday&apos;s order</p>
+                  <span className="bg-leaf text-forest-deep rounded-full px-2 py-0.5 text-[10px] font-bold uppercase">
+                    Best price
+                  </span>
+                </div>
+                <p className="text-ink-soft mt-0.5 text-[11px]">Third Shift Coffee · Meadowlark</p>
+                <div className="text-ink mt-3 space-y-1.5 text-xs">
+                  {[
+                    ["Whole milk × 4 cases", "$75.60"],
+                    ["Oat milk × 1 case", "$42.00"],
+                    ["Delivery", "$15.00"],
+                  ].map(([k, v]) => (
+                    <div key={k} className="flex justify-between">
+                      <span>{k}</span>
+                      <span className="tabular">{v}</span>
+                    </div>
+                  ))}
+                  <div className="border-ink/15 flex items-baseline justify-between border-t border-dashed pt-2">
+                    <span className="font-bold">Total delivered</span>
+                    <span className="tabular font-display text-xl font-semibold">$132.60</span>
+                  </div>
+                </div>
+                <p className="price-tag mt-3 inline-block py-1 pr-3 text-xs font-bold">
+                  $18.30 less than the cheapest-looking supplier
+                </p>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* ------------------------------------------------------------------ features */}
+        {/* ------------------------------------------------------------ kitchens */}
+        <section aria-labelledby="kitchens-title" className="border-ink/10 border-y bg-white py-14">
+          <div className="mx-auto max-w-7xl px-5">
+            <h2
+              id="kitchens-title"
+              className="font-display text-ink text-center text-2xl font-semibold sm:text-3xl"
+            >
+              Everything your kitchen orders, from every supplier, on one list.
+            </h2>
+            <ul className="mt-10 grid grid-cols-4 gap-x-4 gap-y-8 sm:grid-cols-7">
+              {KITCHENS.map((k) => (
+                <li key={k.label} className="group flex flex-col items-center text-center">
+                  <span className="ring-sand group-hover:ring-butter rounded-full ring-4 transition-all">
+                    <Photo
+                      src={k.photo}
+                      className="size-16 rounded-full transition-transform group-hover:scale-105 sm:size-24"
+                    />
+                  </span>
+                  <span className="text-ink mt-3 text-sm font-semibold">{k.label}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        {/* ------------------------------------------------------------ savings */}
+        <section
+          id="savings"
+          aria-labelledby="savings-title"
+          className="mx-auto max-w-7xl scroll-mt-20 px-5 py-24 sm:py-28"
+        >
+          <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
+            <div className="max-w-2xl">
+              <Eyebrow>This week&apos;s best buys</Eyebrow>
+              <H2 id="savings-title">The cheapest items aren&apos;t the cheapest order.</H2>
+            </div>
+            <p className="text-ink-soft max-w-md text-lg leading-relaxed">
+              Real results from the SupplyPilot demo. What you pay is the delivered total, so
+              that&apos;s what we compare.
+            </p>
+          </div>
+
+          <ul className="mt-14 grid gap-6 md:grid-cols-3">
+            {DEALS.map((d) => (
+              <li key={d.title} className="paper reveal flex flex-col overflow-hidden rounded-3xl">
+                <div className="relative">
+                  <Photo src={d.photo} className="aspect-[16/10] w-full" />
+                  <span className="text-ink absolute top-3 left-3 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-bold tracking-wide uppercase">
+                    Demo
+                  </span>
+                </div>
+                <div className="flex flex-1 flex-col p-6">
+                  <p className="text-ink-soft text-xs font-semibold">{d.who}</p>
+                  <h3 className="font-display text-ink mt-1 text-2xl font-semibold">{d.title}</h3>
+                  <div className="mt-4 flex flex-wrap items-center gap-3">
+                    <p className="tabular font-display text-ink text-4xl font-semibold">
+                      {d.total}
+                    </p>
+                    <p
+                      className={cn(
+                        "py-1 pr-3 text-sm font-bold",
+                        d.tag.startsWith("Save")
+                          ? "price-tag"
+                          : "bg-butter text-ink rounded-lg pl-3",
+                      )}
+                    >
+                      {d.tag}
+                    </p>
+                  </div>
+                  <p className="text-ink-soft mt-1 text-sm">{d.vs}</p>
+                  <p className="border-ink/10 text-ink mt-5 border-t pt-4 text-sm leading-relaxed">
+                    {d.why}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          <div id="engine" className="mt-20 scroll-mt-24">
+            <div className="mb-8 text-center">
+              <h3 className="font-display text-ink text-3xl font-semibold sm:text-4xl">
+                See it decide
+              </h3>
+              <p className="text-ink-soft mx-auto mt-3 max-w-xl">
+                Pick an order, flip the switch, and watch the answer change.
+              </p>
+            </div>
+            <EngineDemo />
+          </div>
+        </section>
+
+        {/* ------------------------------------------------------------ factors */}
         <section
           id="features"
           aria-labelledby="features-title"
-          className="mx-auto max-w-6xl scroll-mt-24 border-t border-white/5 px-5 py-24 sm:py-32"
+          className="bg-forest-deep text-cream scroll-mt-20 py-24 sm:py-28"
         >
-          <SectionHead
-            eyebrow="Built for how buyers really buy"
-            id="features-title"
-            title="Everything that changes the price, in one answer."
-            center
-          >
-            The real cost of an order lives in fees, minimums and pack sizes. SupplyPilot puts them
-            all on the table.
-          </SectionHead>
-          <div className="mt-14">
-            <Bento />
+          <div className="mx-auto grid max-w-7xl gap-12 px-5 lg:grid-cols-[0.9fr_1.4fr] lg:gap-16">
+            <div>
+              <Eyebrow className="text-butter">What we count</Eyebrow>
+              <H2 id="features-title" className="text-white">
+                Everything that changes the price, in one answer.
+              </H2>
+              <p className="text-cream/85 mt-5 text-lg leading-relaxed">
+                The real cost of an order hides in fees, minimums and pack sizes. SupplyPilot puts
+                all of it on the table, for every supplier, every time.
+              </p>
+              <Photo
+                src="market-stall"
+                className="mt-10 hidden aspect-[4/3] w-full rounded-3xl lg:block"
+              />
+            </div>
+            <ul className="grid gap-4 sm:grid-cols-2">
+              {FACTORS.map((f) => (
+                <li
+                  key={f.title}
+                  className="reveal rounded-3xl border border-white/10 bg-white/[0.06] p-6"
+                >
+                  <span className="bg-butter text-ink flex size-11 items-center justify-center rounded-2xl">
+                    <f.icon className="size-5" aria-hidden />
+                  </span>
+                  <h3 className="mt-5 text-lg font-bold text-white">{f.title}</h3>
+                  <p className="text-cream/85 mt-2 text-[15px] leading-relaxed">{f.body}</p>
+                </li>
+              ))}
+            </ul>
           </div>
         </section>
 
-        {/* ------------------------------------------------------------------ how it works */}
+        {/* ------------------------------------------------------------ how it works */}
         <section
           id="how"
           aria-labelledby="how-title"
-          className="relative scroll-mt-24 border-t border-white/5 py-24 sm:py-32"
+          className="mx-auto max-w-7xl scroll-mt-20 px-5 py-24 sm:py-28"
         >
-          <div className="mx-auto max-w-6xl px-5">
-            <SectionHead
-              eyebrow="How it works"
-              id="how-title"
-              title="From shopping list to purchase orders in three steps."
-            />
-            <div className="relative mt-14">
-              <div
-                aria-hidden
-                className="absolute top-11 right-[16%] left-[16%] hidden h-px bg-gradient-to-r from-transparent via-emerald-400/40 to-transparent md:block"
-              />
-              <ol className="relative grid gap-4 md:grid-cols-3">
-                {STEPS.map((s, i) => (
-                  <li key={s.title} className="landing-card reveal relative rounded-2xl p-6">
-                    <div className="flex items-center gap-3">
-                      <span className="flex size-10 items-center justify-center rounded-xl border border-emerald-400/30 bg-emerald-400/10 text-emerald-300">
-                        <s.icon className="size-5" aria-hidden />
-                      </span>
-                      <span className="tabular text-xs font-medium text-zinc-400">
-                        Step {i + 1}
-                      </span>
-                    </div>
-                    <h3 className="mt-5 text-lg font-semibold tracking-tight text-white">
-                      {s.title}
-                    </h3>
-                    <p className="mt-2 text-sm leading-relaxed text-[var(--l-muted)]">{s.body}</p>
+          <div className="mx-auto max-w-3xl text-center">
+            <Eyebrow>How it works</Eyebrow>
+            <H2 id="how-title">From shopping list to purchase orders in three steps.</H2>
+          </div>
+          <ol className="mt-14 grid gap-6 md:grid-cols-3">
+            {STEPS.map((s, i) => (
+              <li key={s.title} className="paper reveal overflow-hidden rounded-3xl">
+                <div className="relative">
+                  <Photo src={s.photo} className="aspect-[16/10] w-full" />
+                  <span className="font-display bg-butter text-ink absolute -bottom-6 left-6 flex size-12 items-center justify-center rounded-2xl text-2xl font-semibold shadow-md">
+                    {i + 1}
+                  </span>
+                </div>
+                <div className="p-6 pt-10">
+                  <h3 className="text-ink flex items-center gap-2 text-xl font-bold">
+                    <s.icon className="text-forest size-5" aria-hidden />
+                    {s.title}
+                  </h3>
+                  <p className="text-ink-soft mt-2 leading-relaxed">{s.body}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        {/* ------------------------------------------------------------ stock */}
+        <section
+          id="stock"
+          aria-labelledby="stock-title"
+          className="bg-sand scroll-mt-20 py-24 sm:py-28"
+        >
+          <div className="mx-auto grid max-w-7xl items-center gap-14 px-5 lg:grid-cols-[1fr_1.15fr]">
+            <div>
+              <span className="bg-tomato rounded-full px-3 py-1 text-xs font-bold tracking-wide text-white uppercase">
+                New
+              </span>
+              <H2 id="stock-title" className="mt-5">
+                Know what&apos;s running low before you run out.
+              </H2>
+              <p className="text-ink-soft mt-5 text-lg leading-relaxed">
+                Count the shelf in seconds. SupplyPilot learns how fast you use each item and drafts
+                this week&apos;s order for you, sized to last until the next delivery.
+              </p>
+              <ul className="mt-8 space-y-4">
+                {[
+                  "Weekly use from your last four weeks, with the trend",
+                  "The day each item runs out, so nothing surprises you",
+                  "An order that lasts until delivery, plus 7 days and a 2-day buffer",
+                  "One tap sends it to Find My Best Price",
+                ].map((t) => (
+                  <li key={t} className="text-ink flex gap-3 font-medium">
+                    <span className="bg-forest mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full text-white">
+                      <Check className="size-3.5" aria-hidden />
+                    </span>
+                    {t}
                   </li>
                 ))}
-              </ol>
+              </ul>
+            </div>
+
+            <div className="relative">
+              <Photo
+                src="bakery-counter"
+                className="absolute -top-8 -right-6 hidden aspect-[4/3] w-2/3 rounded-3xl lg:block"
+              />
+              <div aria-hidden className="paper relative rounded-3xl p-5 sm:p-6 lg:mt-24 lg:-ml-6">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-ink-soft text-xs font-semibold">
+                      Sunday Crumb Bakery · Stock
+                    </p>
+                    <p className="text-ink mt-0.5 font-bold">
+                      We drafted 13 items for Tuesday, Nov 10
+                    </p>
+                  </div>
+                  <span className="bg-forest rounded-full px-3 py-1.5 text-xs font-bold text-white">
+                    Price this order →
+                  </span>
+                </div>
+                <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+                  {[
+                    ["9", "Run out first", "text-tomato"],
+                    ["13", "To order", "text-ink"],
+                    ["1", "Enough", "text-forest"],
+                  ].map(([n, l, c]) => (
+                    <div key={l} className="bg-cream rounded-xl py-2.5">
+                      <p className={cn("font-display text-2xl font-semibold", c)}>{n}</p>
+                      <p className="text-ink-soft text-[11px] font-semibold">{l}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="text-ink divide-ink/10 mt-4 divide-y text-xs">
+                  <div className="text-ink-soft grid grid-cols-[1.4fr_0.8fr_1.2fr_0.8fr] gap-2 pb-2 text-[10px] font-bold tracking-wide uppercase sm:grid-cols-[1.4fr_0.8fr_1.3fr_0.9fr_0.8fr]">
+                    <span>Item</span>
+                    <span>On hand</span>
+                    <span>Weekly use</span>
+                    <span className="max-sm:hidden">Runs out</span>
+                    <span className="text-right">Order</span>
+                  </div>
+                  {STOCK_ROWS.map((r) => (
+                    <div
+                      key={r.item}
+                      className="grid grid-cols-[1.4fr_0.8fr_1.2fr_0.8fr] items-center gap-2 py-2.5 sm:grid-cols-[1.4fr_0.8fr_1.3fr_0.9fr_0.8fr]"
+                    >
+                      <span className="font-semibold">{r.item}</span>
+                      <span className="tabular">{r.onHand}</span>
+                      <span className="flex items-center gap-2">
+                        <span className="flex h-6 items-end gap-0.5 max-sm:hidden">
+                          {r.bars.map((h, i) => (
+                            <span
+                              key={i}
+                              className={cn(
+                                "w-1 rounded-sm",
+                                h,
+                                i === r.bars.length - 1 ? "bg-forest" : "bg-kraft",
+                              )}
+                            />
+                          ))}
+                        </span>
+                        <span className="tabular">{r.use}</span>
+                      </span>
+                      <span
+                        className={cn(
+                          "font-semibold max-sm:hidden",
+                          r.runsOut === "Today" || r.runsOut === "Tomorrow"
+                            ? "text-tomato"
+                            : "text-ink",
+                        )}
+                      >
+                        {r.runsOut}
+                      </span>
+                      <span className="tabular text-right font-bold">{r.order}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* ------------------------------------------------------------------ proof */}
-        <section
-          aria-labelledby="proof-title"
-          className="border-t border-white/5 bg-[oklch(0.16_0.006_250)] py-24 sm:py-32"
-        >
-          <div className="mx-auto max-w-6xl px-5">
-            <SectionHead
-              eyebrow="Engineering"
-              id="proof-title"
-              title="Built to be trusted with the books."
-            >
-              A purchasing tool that gets the math wrong once doesn&apos;t get a second chance. So
-              we test it like infrastructure.
-            </SectionHead>
-            <ul className="mt-14 grid gap-px overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.07] sm:grid-cols-2 lg:grid-cols-4">
-              {PROOF.map((p) => (
-                <li key={p.label} className="reveal bg-[oklch(0.175_0.006_250)] p-6 sm:p-7">
-                  <p.icon className="size-5 text-emerald-300" aria-hidden />
-                  <p className="text-shine mt-6 text-3xl font-semibold tracking-[-0.03em]">
-                    {p.stat}
-                  </p>
-                  <h3 className="mt-2 text-sm font-semibold text-white">{p.label}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-[var(--l-muted)]">{p.body}</p>
-                </li>
-              ))}
-            </ul>
+        {/* ------------------------------------------------------------ savings check */}
+        <section aria-labelledby="check-title" className="mx-auto max-w-7xl px-5 py-24 sm:py-28">
+          <div className="bg-forest relative isolate grid overflow-hidden rounded-[2.5rem] lg:grid-cols-2">
+            <div className="p-8 sm:p-12 lg:p-16">
+              <Eyebrow className="text-butter">Free savings check</Eyebrow>
+              <h2
+                id="check-title"
+                className="font-display mt-3 text-4xl leading-[1.05] font-semibold text-white sm:text-5xl"
+              >
+                How much would you save?
+              </h2>
+              <p className="text-cream/90 mt-5 text-lg leading-relaxed">
+                Send us three recent invoices and we&apos;ll show you what the same orders would
+                have cost through SupplyPilot. Invoice checks are coming soon. Until then, try it
+                with one of our demo kitchens.
+              </p>
+              <Cta variant="light" className="mt-8">
+                Try a demo kitchen
+              </Cta>
+            </div>
+            <div className="relative min-h-72">
+              <Photo
+                src="bakery-bread"
+                alt="Fresh loaves with handwritten price labels"
+                className="absolute inset-0 h-full w-full"
+              />
+              <div
+                aria-hidden
+                className="paper absolute right-6 bottom-6 left-6 rounded-2xl p-4 sm:left-auto sm:w-72"
+              >
+                <p className="text-ink flex items-center gap-2 text-sm font-bold">
+                  <Receipt className="text-forest size-4" /> 3 invoices in
+                </p>
+                <p className="text-ink-soft mt-1 text-xs">Bramblewood · Meadowlark · Citrus Row</p>
+                <p className="text-ink mt-3 text-xs font-semibold">
+                  Every line compared against every supplier, delivered.
+                </p>
+              </div>
+            </div>
           </div>
         </section>
 
-        {/* ------------------------------------------------------------------ promise */}
+        {/* ------------------------------------------------------------ promise */}
         <section
           id="honest"
           aria-labelledby="honest-title"
-          className="scroll-mt-24 border-t border-white/5 py-24 sm:py-32"
+          className="border-ink/10 scroll-mt-20 border-t bg-white py-24 sm:py-28"
         >
-          <div className="mx-auto grid max-w-6xl gap-12 px-5 lg:grid-cols-[1fr_1.2fr] lg:gap-20">
-            <SectionHead eyebrow="Our promise" id="honest-title" title="We don't invent savings.">
-              Buying software loves a big &ldquo;you saved&rdquo; number. Ours only appears when
-              it&apos;s real, and every plan shows its working.
-            </SectionHead>
-            <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+          <div className="mx-auto grid max-w-7xl gap-14 px-5 lg:grid-cols-[1fr_1.2fr] lg:gap-20">
+            <div>
+              <Eyebrow>Our promise</Eyebrow>
+              <H2 id="honest-title">We don&apos;t invent savings.</H2>
+              <p className="text-ink-soft mt-5 text-lg leading-relaxed">
+                Buying software loves a big &ldquo;you saved&rdquo; number. Ours only shows up when
+                it&apos;s real, and every plan shows its working.
+              </p>
+              <ul className="mt-10 grid grid-cols-2 gap-3">
+                {PROOF.map((p) => (
+                  <li key={p.label} className="bg-cream rounded-2xl p-4">
+                    <p.icon className="text-forest size-5" aria-hidden />
+                    <p className="font-display text-ink mt-3 text-2xl font-semibold">{p.stat}</p>
+                    <p className="text-ink-soft mt-1 text-sm leading-snug">{p.label}</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <ul className="space-y-4">
               {PRINCIPLES.map((p) => (
-                <li key={p.title} className="landing-card reveal flex gap-4 rounded-2xl p-5">
-                  <p.icon className="mt-0.5 size-5 shrink-0 text-emerald-300" aria-hidden />
+                <li key={p.title} className="paper reveal flex gap-5 rounded-3xl p-6 sm:p-7">
+                  <span className="bg-leaf text-forest flex size-12 shrink-0 items-center justify-center rounded-2xl">
+                    <p.icon className="size-6" aria-hidden />
+                  </span>
                   <div>
-                    <h3 className="font-semibold tracking-tight text-white">{p.title}</h3>
-                    <p className="mt-1 text-sm leading-relaxed text-[var(--l-muted)]">{p.body}</p>
+                    <h3 className="text-ink text-xl font-bold">{p.title}</h3>
+                    <p className="text-ink-soft mt-1.5 leading-relaxed">{p.body}</p>
                   </div>
                 </li>
               ))}
+              <li>
+                <Photo
+                  src="eggs"
+                  className="aspect-[16/7] w-full rounded-3xl"
+                  alt="Brown eggs in a carton"
+                />
+              </li>
             </ul>
           </div>
         </section>
 
-        {/* ------------------------------------------------------------------ roadmap */}
-        <section aria-labelledby="roadmap-title" className="border-t border-white/5 py-24 sm:py-32">
-          <div className="mx-auto max-w-6xl px-5">
-            <SectionHead
-              eyebrow="Where it's going"
-              id="roadmap-title"
-              title="From price engine to purchasing autopilot."
-            >
-              Pricing the order is step one. Next, SupplyPilot learns what you use and drafts the
-              order before you run out. You still approve every one.
-            </SectionHead>
-            <ol className="mt-14 grid gap-4 md:grid-cols-3">
-              {ROADMAP.map((r, i) => (
-                <li
-                  key={r.title}
-                  className={cn(
-                    "reveal relative rounded-2xl p-6",
-                    i === 0 ? "glow-border bg-[oklch(0.2_0.012_170)]" : "landing-card",
-                  )}
-                >
-                  <div className="flex items-center justify-between">
-                    <span
-                      className={cn(
-                        "flex size-10 items-center justify-center rounded-xl border",
-                        i === 0
-                          ? "border-emerald-400/40 bg-emerald-400/15 text-emerald-300"
-                          : "border-white/10 bg-white/[0.04] text-zinc-300",
-                      )}
-                    >
-                      <r.icon className="size-5" aria-hidden />
-                    </span>
-                    <span
-                      className={cn(
-                        "rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-wide uppercase",
-                        i === 0
-                          ? "bg-emerald-400/15 text-emerald-300"
-                          : i === 1
-                            ? "bg-amber-300/10 text-amber-200"
-                            : "bg-white/[0.06] text-zinc-300",
-                      )}
-                    >
-                      {r.status}
-                    </span>
-                  </div>
-                  <h3 className="mt-5 text-lg font-semibold tracking-tight text-white">
-                    {r.title}
-                  </h3>
-                  <p className="mt-2 text-sm leading-relaxed text-[var(--l-muted)]">{r.body}</p>
-                </li>
-              ))}
-            </ol>
-          </div>
-        </section>
-
-        {/* ------------------------------------------------------------------ faq */}
+        {/* ------------------------------------------------------------ faq */}
         <section
           id="faq"
           aria-labelledby="faq-title"
-          className="scroll-mt-24 border-t border-white/5 py-24 sm:py-32"
+          className="mx-auto grid max-w-7xl scroll-mt-20 gap-12 px-5 py-24 sm:py-28 lg:grid-cols-[0.8fr_1.2fr] lg:gap-20"
         >
-          <div className="mx-auto grid max-w-6xl gap-12 px-5 lg:grid-cols-[0.8fr_1.2fr] lg:gap-20">
-            <SectionHead eyebrow="FAQ" id="faq-title" title="Straight answers." />
-            <div className="reveal divide-y divide-white/[0.08] border-y border-white/[0.08]">
-              {FAQ.map((f) => (
-                <details key={f.q} className="landing-faq group">
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-6 py-5 text-base font-medium text-white transition-colors hover:text-emerald-200">
-                    {f.q}
+          <div>
+            <Eyebrow>FAQ</Eyebrow>
+            <H2 id="faq-title">Straight answers.</H2>
+          </div>
+          <div className="space-y-3">
+            {FAQ.map((f) => (
+              <details key={f.q} className="market-faq paper group rounded-2xl px-6">
+                <summary className="text-ink flex cursor-pointer list-none items-center justify-between gap-6 py-5 text-lg font-bold">
+                  {f.q}
+                  <span className="bg-sand group-open:bg-forest flex size-8 shrink-0 items-center justify-center rounded-full transition-colors group-open:text-white">
                     <Plus
-                      className="size-4 shrink-0 text-zinc-400 transition-transform duration-300 group-open:rotate-45"
+                      className="size-4 transition-transform duration-300 group-open:rotate-45"
                       aria-hidden
                     />
-                  </summary>
-                  <p className="-mt-1 pr-10 pb-5 text-sm leading-relaxed text-[var(--l-muted)]">
-                    {f.a}
-                  </p>
-                </details>
-              ))}
-            </div>
+                  </span>
+                </summary>
+                <p className="text-ink-soft -mt-1 pr-10 pb-6 leading-relaxed">{f.a}</p>
+              </details>
+            ))}
           </div>
         </section>
 
-        {/* ------------------------------------------------------------------ final CTA */}
-        <section aria-labelledby="cta-title" className="px-5 pb-24 sm:pb-32">
-          <div className="glow-border reveal relative mx-auto max-w-5xl overflow-hidden rounded-3xl">
-            <div className="relative isolate bg-[oklch(0.18_0.01_200)] px-6 py-16 text-center sm:py-24">
-              <div
-                aria-hidden
-                className="absolute top-0 left-1/2 -z-10 h-80 w-[700px] max-w-[160%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(closest-side,oklch(0.75_0.15_163/0.45),transparent)] blur-2xl"
-              />
-              <div aria-hidden className="landing-grid absolute inset-0 -z-10 opacity-60" />
-              <LogoMark className="mx-auto size-11 rounded-xl" />
+        {/* ------------------------------------------------------------ final CTA */}
+        <section aria-labelledby="cta-title" className="mx-auto max-w-7xl px-5 pb-24 sm:pb-28">
+          <div className="relative isolate overflow-hidden rounded-[2.5rem]">
+            <Photo src="restaurant-cook" className="absolute inset-0 -z-10 h-full w-full" />
+            <div className="from-ink via-ink/85 to-ink/50 absolute inset-0 -z-10 bg-gradient-to-r" />
+            <div className="max-w-2xl px-8 py-20 sm:px-14 sm:py-24">
               <h2
                 id="cta-title"
-                className="text-shine mx-auto mt-6 max-w-2xl text-3xl font-semibold tracking-[-0.035em] sm:text-5xl"
+                className="font-display text-5xl leading-[1.02] font-semibold text-white sm:text-6xl"
               >
                 See your next order priced properly.
               </h2>
-              <p className="mx-auto mt-4 max-w-lg text-[var(--l-muted)]">
-                Open the demo as a bakery, café or restaurant. Load a list, pick a day, and press
-                one button.
+              <p className="text-cream mt-5 text-lg leading-relaxed">
+                Open the demo as a bakery, café or restaurant. Load a list, pick a day, press one
+                button.
               </p>
-              <div className="mt-9 flex justify-center">
-                <PrimaryCta>Try the live demo</PrimaryCta>
-              </div>
+              <Cta variant="light" className="mt-9">
+                Start with a demo kitchen
+              </Cta>
             </div>
           </div>
         </section>
       </main>
 
-      {/* ------------------------------------------------------------------ footer */}
-      <footer className="border-t border-white/5">
-        <div className="mx-auto grid max-w-6xl gap-10 px-5 py-14 text-sm sm:grid-cols-[1.4fr_1fr_1fr]">
+      {/* ------------------------------------------------------------ footer */}
+      <footer className="bg-forest-deep text-cream">
+        <div className="mx-auto grid max-w-7xl gap-10 px-5 py-16 sm:grid-cols-[1.6fr_1fr_1fr]">
           <div>
-            <div className="flex items-center gap-2.5 font-semibold text-white">
-              <LogoMark className="size-6" />
+            <div className="flex items-center gap-2.5 text-lg font-bold text-white">
+              <LogoMark className="size-8 rounded-[10px]" />
               SupplyPilot
             </div>
-            <p className="mt-4 max-w-xs text-sm leading-relaxed text-zinc-400">
-              The lowest delivered cost for independent restaurants, cafés and bakeries, and exactly
-              why.
+            <p className="text-cream/85 mt-4 max-w-sm leading-relaxed">
+              Buy your kitchen&apos;s ingredients for less. One list, every supplier, the lowest
+              delivered cost, and exactly why.
             </p>
           </div>
           <nav aria-label="Product">
-            <p className="text-xs font-semibold tracking-[0.14em] text-zinc-300 uppercase">
-              Product
-            </p>
-            <ul className="mt-4 space-y-2.5 text-zinc-400">
+            <p className="text-butter text-xs font-bold tracking-[0.14em] uppercase">Product</p>
+            <ul className="text-cream/90 mt-4 space-y-2.5">
               <li>
-                <Link href="/home" className="transition-colors hover:text-white">
+                <Link href="/home" className="hover:text-white">
                   Live demo
                 </Link>
               </li>
               <li>
-                <a href="#engine" className="transition-colors hover:text-white">
-                  See it decide
+                <a href="#savings" className="hover:text-white">
+                  Savings
                 </a>
               </li>
               <li>
-                <a href="#how" className="transition-colors hover:text-white">
-                  How it works
+                <a href="#stock" className="hover:text-white">
+                  Stock
                 </a>
               </li>
             </ul>
           </nav>
           <nav aria-label="Company">
-            <p className="text-xs font-semibold tracking-[0.14em] text-zinc-300 uppercase">
-              Company
-            </p>
-            <ul className="mt-4 space-y-2.5 text-zinc-400">
+            <p className="text-butter text-xs font-bold tracking-[0.14em] uppercase">Company</p>
+            <ul className="text-cream/90 mt-4 space-y-2.5">
               <li>
-                <a href="#honest" className="transition-colors hover:text-white">
+                <a href="#honest" className="hover:text-white">
                   Our promise
                 </a>
               </li>
               <li>
-                <a href="#faq" className="transition-colors hover:text-white">
+                <a href="#faq" className="hover:text-white">
                   FAQ
                 </a>
               </li>
             </ul>
           </nav>
         </div>
-        <div className="border-t border-white/5">
-          <div className="mx-auto flex max-w-6xl flex-col gap-2 px-5 py-6 text-xs text-zinc-400 sm:flex-row sm:justify-between">
+        <div className="border-t border-white/10">
+          <div className="text-cream/80 mx-auto flex max-w-7xl flex-col gap-2 px-5 py-6 text-xs sm:flex-row sm:justify-between">
             <p>© 2026 SupplyPilot</p>
             <p>
               The public demo uses fictional suppliers, buyers and prices. No real orders are
