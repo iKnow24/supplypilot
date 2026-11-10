@@ -49,3 +49,19 @@ export async function startSuggestedOrder(formData: FormData) {
       : `/stock?for=${encodeURIComponent(date)}&error=${encodeURIComponent(result.error)}`,
   );
 }
+
+/** Form action: add one item's suggested amount to the cart (merging), then open the cart. */
+export async function addSuggestedItem(formData: FormData) {
+  const productId = str(formData.get("productId"));
+  const result = await runBuyerAction(async ({ state, session }) => {
+    const view = await loadStock({ ...session, state });
+    const line = suggestedCartLines(view.rows).find((l) => l.product_id === productId);
+    if (!line) return { ok: false, error: "Nothing to order for that item right now" };
+    await state.setLines([line], "merge");
+  });
+  redirect(
+    result.ok
+      ? "/cart"
+      : `/stock/${encodeURIComponent(productId)}?error=${encodeURIComponent(result.error)}`,
+  );
+}

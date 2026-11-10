@@ -9,7 +9,7 @@ test("stock: count a shelf, see the plan change, then price the drafted order", 
 }) => {
   test.setTimeout(90_000);
   await actAs(context, "org_sundaycrumb", baseURL!);
-  await page.goto("/stock", { waitUntil: "networkidle" });
+  await page.goto("/stock?view=list", { waitUntil: "networkidle" });
 
   await expect(page.getByRole("heading", { name: /^We drafted \d+ items? for / })).toBeVisible();
   await expect(page.getByText("Demo data: usage is a fictional estimate.")).toBeVisible();
@@ -46,4 +46,39 @@ test("stock: changing the delivery date re-plans the order", async ({ page, cont
   await picker.selectOption(later!);
   await expect(page).toHaveURL(new RegExp(`/stock\\?for=${later}$`));
   await expect(picker).toHaveValue(later!);
+});
+
+test("stock: the pantry links each item to who sells it cheapest", async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await actAs(context, "org_sundaycrumb", baseURL!);
+  await page.goto("/stock", { waitUntil: "networkidle" });
+  await expect(page.getByRole("link", { name: "Pantry", exact: true })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+  await page.getByRole("link", { name: /^Large eggs, shell/ }).click();
+  await expect(page).toHaveURL(/\/stock\/prd_eggs_large$/);
+  await expect(page.getByRole("heading", { name: "Large eggs, shell" })).toBeVisible();
+  const prices = page.getByRole("region", { name: "Who sells it cheapest right now" });
+  await expect(prices.getByText("Lowest price")).toHaveCount(1);
+  await expect(prices.getByText("Doesn't deliver to you")).toBeVisible();
+});
+
+test("home: shows what needs attention and the drafted order", async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await actAs(context, "org_sundaycrumb", baseURL!);
+  await page.goto("/home", { waitUntil: "networkidle" });
+  const attention = page.getByRole("region", { name: "Needs attention" });
+  await expect(attention.getByRole("link", { name: /All-purpose flour/ })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Your next order" })).toContainText(
+    /\d+ items for/,
+  );
+  await attention.getByRole("link", { name: /All-purpose flour/ }).click();
+  await expect(page).toHaveURL(/\/stock\/prd_flour_ap_unbl$/);
 });

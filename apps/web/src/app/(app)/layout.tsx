@@ -2,7 +2,6 @@ import { Settings } from "lucide-react";
 import Link from "next/link";
 
 import { BuyerSwitcher } from "@/components/app/buyer-switcher";
-import { DemoBanner } from "@/components/app/demo-banner";
 import { Logo } from "@/components/app/logo";
 import { DesktopNav, MobileTabBar, SettingsLink } from "@/components/app/nav-links";
 import { getRepository } from "@/lib/catalog/seed-repository";
@@ -42,7 +41,6 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
       </aside>
 
       <div className="min-w-0 flex-1">
-        {source.synthetic ? <DemoBanner label={source.label} /> : null}
         <header className="bg-background/80 sticky top-0 z-30 border-b backdrop-blur-xl md:hidden">
           <div className="flex h-14 items-center gap-3 px-4">
             <Logo href="/home" />

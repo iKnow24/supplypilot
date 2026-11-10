@@ -13,7 +13,9 @@ test("landing page explains the product and opens the demo", async ({ page }) =>
 
   await page.getByRole("link", { name: "Open the live demo" }).click();
   await expect(page).toHaveURL(/\/home$/);
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("What do you need to order?");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText(
+    /^Good (morning|afternoon|evening)\./,
+  );
   // The app's logo leads back to the app, not the marketing page.
   await expect(page.getByRole("link", { name: "SupplyPilot home" }).first()).toHaveAttribute(
     "href",
