@@ -146,7 +146,7 @@ export class AutopilotTools implements Toolbox {
       },
       detail: `${plural(lines.length, "item")} for ${formatDate(view.deliveryDate)}${
         removed.length ? ` · left out ${removed.map((r) => r.product.name).join(", ")}` : ""
-      }. Your Smart Cart now holds this order`,
+      }. Your next order now holds it`,
     });
   }
 

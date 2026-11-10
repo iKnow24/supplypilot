@@ -5,26 +5,25 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("next/navigation", () => ({ usePathname: () => "/suppliers/sup_kestrel" }));
 
 import { EmptyState } from "../empty-state";
-import { DesktopNav, MobileTabBar, isActive } from "../nav-links";
+import { MobileTabBar, OrderTabs, TopNav, isActive } from "../nav-links";
 import { SupplierCard } from "../supplier-card";
 import type { SupplierSummary } from "@/lib/catalog/repository";
 
 describe("navigation", () => {
-  it("marks the current section, including nested pages", () => {
-    render(<DesktopNav />);
-    expect(screen.getByRole("link", { name: "Suppliers" })).toHaveAttribute("aria-current", "page");
+  it("puts suppliers under Orders, and marks the Vendors tab", () => {
+    render(<TopNav />);
+    expect(screen.getByRole("link", { name: "Orders" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "Home" })).not.toHaveAttribute("aria-current");
+    render(<OrderTabs />);
+    expect(screen.getByRole("link", { name: "Vendors" })).toHaveAttribute("aria-current", "page");
   });
 
-  it("renders the six primary destinations on mobile", () => {
+  it("renders the three primary destinations on mobile", () => {
     render(<MobileTabBar />);
     expect(screen.getAllByRole("link").map((l) => l.textContent)).toEqual([
       "Home",
       "Stock",
-      "Smart Cart",
-      "Lists",
       "Orders",
-      "Suppliers",
     ]);
   });
 

@@ -284,11 +284,14 @@ function PlanCard({
 }
 
 export function Autopilot({
+  autoStart = false,
   initialPlan,
   deliveryDate,
   itemCount,
   shortCount,
 }: {
+  /** Start planning on arrival, without a tap (Home decides when that's safe). */
+  autoStart?: boolean;
   /** The last run's plan, if recent. */
   initialPlan: AutopilotPlan | null;
   deliveryDate: string | null;
@@ -385,6 +388,15 @@ export function Autopilot({
       setPhase("error");
     }
   }
+
+  // Plan by itself once on arrival. A ref, so React's dev double-mount can't start it twice.
+  const autoStarted = useRef(false);
+  useEffect(() => {
+    if (!autoStart || autoStarted.current) return;
+    autoStarted.current = true;
+    void start();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, on arrival
+  }, [autoStart]);
 
   const day = deliveryDate ? formatDate(deliveryDate) : null;
 

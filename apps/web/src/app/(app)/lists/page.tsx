@@ -11,7 +11,7 @@ import { getSession } from "@/lib/session";
 import { UnitTable } from "@/lib/units";
 import { baselineSuppliers } from "@/lib/view";
 
-export const metadata: Metadata = { title: "Saved lists" };
+export const metadata: Metadata = { title: "Usual lists" };
 
 export default async function ListsPage() {
   const repo = getRepository();
@@ -28,8 +28,8 @@ export default async function ListsPage() {
   return (
     <StatusProvider>
       <PageHeader
-        title="Saved lists"
-        description="Your usual orders. Load one into the Smart Cart, or copy it to make a variation."
+        title="Usual lists"
+        description="Your usual orders. Load one as your next order, or copy it to make a variation."
       />
       {!state ? (
         <PersistenceNotice persistence={persistence} />

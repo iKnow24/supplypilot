@@ -1,8 +1,22 @@
 import { expect, type BrowserContext, type Page } from "@playwright/test";
 
-/** Pick the demo buyer before the first request; the proxy signs in as its demo account. */
-export async function actAs(context: BrowserContext, orgId: string, baseURL: string) {
-  await context.addCookies([{ name: "sp_demo_org", value: orgId, url: baseURL }]);
+/**
+ * Pick the demo buyer before the first request; the proxy signs in as its demo account.
+ * Autopilot waits for a tap unless `autopilot: "auto"`: a plan running in the background would
+ * rewrite the cart under the other tests.
+ */
+export async function actAs(
+  context: BrowserContext,
+  orgId: string,
+  baseURL: string,
+  opts: { autopilot?: "auto" | "manual" } = {},
+) {
+  await context.addCookies([
+    { name: "sp_demo_org", value: orgId, url: baseURL },
+    ...(opts.autopilot === "auto"
+      ? []
+      : [{ name: "sp_autopilot_manual", value: "1", url: baseURL }]),
+  ]);
 }
 
 /** Load a saved list into the cart from the Lists page (resets the cart's lines). */

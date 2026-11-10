@@ -1,58 +1,61 @@
 "use client";
 
-import { Boxes, ClipboardList, Home, Package, Settings, ShoppingCart, Truck } from "lucide-react";
+import { Boxes, Home, Package } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils";
 
+/**
+ * Three places, nothing else: what's happening (Home), what you have (Stock), and everything
+ * about buying (Orders: the next order, past orders, usual lists and vendors).
+ */
 export const NAV_ITEMS = [
-  { href: "/home", label: "Home", icon: Home },
-  { href: "/stock", label: "Stock", icon: Boxes },
-  { href: "/cart", label: "Smart Cart", icon: ShoppingCart },
-  { href: "/lists", label: "Lists", icon: ClipboardList },
-  { href: "/orders", label: "Orders", icon: Package },
-  { href: "/suppliers", label: "Suppliers", icon: Truck },
+  { href: "/home", label: "Home", icon: Home, match: ["/home"] },
+  { href: "/stock", label: "Stock", icon: Boxes, match: ["/stock"] },
+  {
+    href: "/cart",
+    label: "Orders",
+    icon: Package,
+    match: ["/cart", "/results", "/orders", "/lists", "/suppliers"],
+  },
+] as const;
+
+/** The sections inside Orders. */
+export const ORDER_TABS = [
+  { href: "/cart", label: "Next order", match: ["/cart", "/results"] },
+  { href: "/orders", label: "Past orders", match: ["/orders"] },
+  { href: "/lists", label: "Usual lists", match: ["/lists"] },
+  { href: "/suppliers", label: "Vendors", match: ["/suppliers"] },
 ] as const;
 
 export function isActive(pathname: string, href: string) {
   return href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
 }
 
-const itemClass = (active: boolean) =>
-  cn(
-    "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-[background-color,color,box-shadow]",
-    active
-      ? "bg-card text-foreground shadow-card"
-      : "text-muted-foreground hover:bg-card/70 hover:text-foreground",
-  );
+const inSection = (pathname: string, match: readonly string[]) =>
+  match.some((m) => isActive(pathname, m));
 
-const iconClass = (active: boolean) =>
-  cn(
-    "size-4 shrink-0 transition-colors",
-    active ? "text-primary" : "text-muted-foreground group-hover:text-foreground",
-  );
-
-/** Tablet and up: the sidebar's main navigation. */
-export function DesktopNav() {
+/** Tablet and up: the links in the top bar. */
+export function TopNav() {
   const pathname = usePathname();
   return (
     <nav aria-label="Main" className="hidden md:block">
-      <p className="text-muted-foreground mb-2 px-3 text-[11px] font-medium tracking-[0.08em] uppercase">
-        Buying
-      </p>
-      <ul className="space-y-0.5">
+      <ul className="flex items-center gap-1">
         {NAV_ITEMS.map((item) => {
-          const active = isActive(pathname, item.href);
-          const Icon = item.icon;
+          const active = inSection(pathname, item.match);
           return (
             <li key={item.href}>
               <Link
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className={itemClass(active)}
+                className={cn(
+                  "relative rounded-lg px-3.5 py-2 text-sm font-medium transition-colors",
+                  active
+                    ? "text-foreground after:bg-primary after:absolute after:inset-x-3.5 after:-bottom-[13px] after:h-0.5 after:rounded-full"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
+                )}
               >
-                <Icon className={iconClass(active)} aria-hidden />
                 {item.label}
               </Link>
             </li>
@@ -63,18 +66,38 @@ export function DesktopNav() {
   );
 }
 
-export function SettingsLink() {
+/** Inside Orders: Next order · Past orders · Usual lists · Vendors. Hidden elsewhere. */
+export function OrderTabs() {
   const pathname = usePathname();
-  const active = isActive(pathname, "/settings");
+  if (!ORDER_TABS.some((t) => inSection(pathname, t.match))) return null;
   return (
-    <Link href="/settings" aria-current={active ? "page" : undefined} className={itemClass(active)}>
-      <Settings className={iconClass(active)} aria-hidden />
-      Settings
-    </Link>
+    <nav aria-label="Orders" className="-mx-1 mb-8 overflow-x-auto px-1">
+      <ul className="bg-muted inline-flex rounded-xl p-1">
+        {ORDER_TABS.map((t) => {
+          const active = inSection(pathname, t.match);
+          return (
+            <li key={t.href}>
+              <Link
+                href={t.href}
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "block rounded-lg px-3.5 py-1.5 text-sm font-medium whitespace-nowrap transition-colors",
+                  active
+                    ? "bg-card text-foreground shadow-card"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {t.label}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
   );
 }
 
-/** Phones: a familiar bottom tab bar. */
+/** Phones: a bottom tab bar with the same three places. */
 export function MobileTabBar() {
   const pathname = usePathname();
   return (
@@ -82,9 +105,9 @@ export function MobileTabBar() {
       aria-label="Main"
       className="bg-card/85 fixed inset-x-0 bottom-0 z-40 border-t pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden"
     >
-      <ul className="grid grid-cols-6">
+      <ul className="grid grid-cols-3">
         {NAV_ITEMS.map((item) => {
-          const active = isActive(pathname, item.href);
+          const active = inSection(pathname, item.match);
           const Icon = item.icon;
           return (
             <li key={item.href}>
@@ -92,7 +115,7 @@ export function MobileTabBar() {
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex flex-col items-center gap-1 py-2.5 text-[10.5px] font-medium whitespace-nowrap",
+                  "flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium",
                   active ? "text-primary" : "text-muted-foreground",
                 )}
               >

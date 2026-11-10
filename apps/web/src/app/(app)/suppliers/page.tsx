@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { getRepository } from "@/lib/catalog/seed-repository";
 import { getCurrentBuyer } from "@/lib/session";
 
-export const metadata: Metadata = { title: "Suppliers" };
+export const metadata: Metadata = { title: "Vendors" };
 
 export default async function SuppliersPage() {
   const repo = getRepository();
@@ -23,7 +23,7 @@ export default async function SuppliersPage() {
   return (
     <div>
       <PageHeader
-        title="Suppliers"
+        title="Vendors"
         description={
           <>
             Participating catalogs, delivery schedules and how fresh their data is.{" "}
