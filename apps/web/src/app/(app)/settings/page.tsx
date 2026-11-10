@@ -5,11 +5,13 @@ import { PageHeader } from "@/components/app/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getRepository } from "@/lib/catalog/seed-repository";
 import { PersistenceNotice } from "@/components/app/persistence-notice";
+import { ResetDemo } from "@/components/app/reset-demo";
 import { getSession } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Settings" };
 
-export default async function SettingsPage() {
+export default async function SettingsPage({ searchParams }: PageProps<"/settings">) {
+  const { error } = await searchParams;
   const repo = getRepository();
   const [buyers, { buyer, persistence }, source, zones] = await Promise.all([
     repo.listBuyers(),
@@ -46,6 +48,29 @@ export default async function SettingsPage() {
           </p>
         </CardContent>
       </Card>
+      {persistence.status === "ready" && buyer.synthetic ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Start the demo fresh</CardTitle>
+            <CardDescription>
+              Before showing a store, put {buyer.name.replace(" (Demo)", "")} back to how it starts:
+              its starting stock and usual list, with no old carts, plans, orders or imported
+              prices. Only this demo business is affected.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {typeof error === "string" ? (
+              <p
+                role="alert"
+                className="bg-destructive-soft text-destructive rounded-xl px-4 py-3 text-sm"
+              >
+                {error}
+              </p>
+            ) : null}
+            <ResetDemo name={buyer.name.replace(" (Demo)", "")} />
+          </CardContent>
+        </Card>
+      ) : null}
       <Card>
         <CardHeader>
           <CardTitle>About this data</CardTitle>

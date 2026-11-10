@@ -180,6 +180,30 @@ export type Database = {
           },
         ];
       };
+      demo_seed: {
+        Row: {
+          data: NonNullable<Json>;
+          org_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          data: NonNullable<Json>;
+          org_id: string;
+        };
+        Update: {
+          data?: NonNullable<Json>;
+          org_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "demo_seed_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: true;
+            referencedRelation: "buyer_orgs";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       favorites: {
         Row: {
           created_at: string;
@@ -742,6 +766,7 @@ export type Database = {
       is_org_member: { Args: { target_org: string }; Returns: boolean };
       load_list_into_cart: { Args: { p_list_id: string; p_org: string }; Returns: undefined };
       mark_po_exported: { Args: { p_org: string; p_po: string }; Returns: string };
+      reset_demo_org: { Args: { p_org: string }; Returns: undefined };
       save_cart_as_list: { Args: { p_name: string; p_org: string }; Returns: string };
       save_price_import: {
         Args: {

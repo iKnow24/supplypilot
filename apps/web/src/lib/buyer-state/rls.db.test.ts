@@ -408,3 +408,35 @@ describe("stock", () => {
     expect(data).toEqual([]);
   });
 });
+
+describe("demo reset", () => {
+  it("puts a demo business back to its starting lists and counts, and clears its work", async () => {
+    const repo = new SupabaseBuyerStateRepository(a, A);
+    const { data: seedRow } = await a.from("demo_seed").select("data").eq("org_id", A).single();
+    const seeded = (seedRow!.data as { counts: { product_id: string; quantity: string }[] }).counts;
+
+    // Do some "demo" work: a new list, a cart line, a fresh count.
+    await repo.setLines([{ ...startCart, product_id: "prd_milk_whole" }], "replace");
+    await repo.saveCartAsList("Demo scribble");
+    await repo.recordStockCounts([{ product_id: "prd_oat_milk", quantity: "1", unit: "qt" }]);
+
+    await repo.resetDemo();
+    // Exactly the seeded list (anything made during demos, or by other tests, is gone).
+    expect((await repo.listSavedLists()).map((l) => l.name)).toEqual(["Weekly café restock"]);
+    expect((await repo.getCart()).lines).toEqual([]);
+    const after = await repo.listStockCounts();
+    expect(after.length).toBe(seeded.length);
+    for (const c of seeded) {
+      expect(Number(after.find((x) => x.productId === c.product_id)?.quantity)).toBe(
+        Number(c.quantity),
+      );
+    }
+  });
+
+  it("can't reset another org", async () => {
+    const { error } = await a.rpc("reset_demo_org", { p_org: B });
+    expect(error?.code).toBe("42501");
+  });
+});
+
+const startCart = { product_id: "", quantity: "1", unit: "gal", current_supplier_id: null };
