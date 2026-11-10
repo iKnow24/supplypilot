@@ -5,6 +5,7 @@ import Link from "next/link";
 import { EmptyState } from "@/components/app/empty-state";
 import { PageHeader } from "@/components/app/page-header";
 import { PersistenceNotice } from "@/components/app/persistence-notice";
+import { SlidingTabs } from "@/components/app/sliding-tabs";
 import { StatusProvider } from "@/components/cart/status";
 import { DeliverySelect } from "@/components/stock/delivery-select";
 import { SliderLegend } from "@/components/stock/level";
@@ -16,7 +17,6 @@ import { formatDate, localParts } from "@/lib/delivery";
 import { getSession } from "@/lib/session";
 import { deliveryMark, loadStock } from "@/lib/stock/load";
 import { BUFFER_DAYS, COVER_DAYS, daysBetween } from "@/lib/stock/plan";
-import { cn } from "@/lib/utils";
 
 import { startSuggestedOrder } from "./actions";
 
@@ -140,23 +140,15 @@ export default async function StockPage({ searchParams }: PageProps<"/stock">) {
               <h2 id="items" className="sr-only">
                 Everything you track
               </h2>
-              <nav aria-label="Stock views" className="bg-muted inline-flex rounded-xl p-1">
-                {VIEWS.map((v) => (
-                  <Link
-                    key={v.id}
-                    href={tabHref(v.id)}
-                    aria-current={mode === v.id ? "page" : undefined}
-                    className={cn(
-                      "rounded-lg px-3.5 py-1.5 text-sm font-medium transition-colors",
-                      mode === v.id
-                        ? "bg-card text-foreground shadow-card"
-                        : "text-muted-foreground hover:text-foreground",
-                    )}
-                  >
-                    {v.label}
-                  </Link>
-                ))}
-              </nav>
+              <SlidingTabs
+                label="Stock views"
+                look="segmented"
+                items={VIEWS.map((v) => ({
+                  href: tabHref(v.id),
+                  label: v.label,
+                  active: mode === v.id,
+                }))}
+              />
               {mode === "pantry" ? (
                 <SliderLegend deliveryLabel={deliveryMark(view)?.label ?? null} />
               ) : (

@@ -258,6 +258,29 @@
 }
 
 @layer components {
+  /* Frosted glass for the floating bars: translucent, blurred, with a hairline edge and a soft
+     lift. Stronger once the page scrolls under it. */
+  .glass-bar {
+    background: oklch(0.995 0.004 85 / 0.72);
+    /* Standard property only: the CSS build adds the Safari prefix (writing both made it keep
+       just the prefixed one, which Chrome ignores). */
+    backdrop-filter: blur(18px) saturate(160%);
+    box-shadow:
+      0 0 0 1px oklch(0.3 0.03 262 / 0.08),
+      inset 0 1px 0 oklch(1 0 0 / 0.7),
+      0 8px 24px -10px oklch(0.25 0.04 262 / 0.18);
+    transition:
+      box-shadow 0.25s ease,
+      background-color 0.25s ease;
+  }
+  .glass-bar[data-scrolled] {
+    background: oklch(0.995 0.004 85 / 0.86);
+    box-shadow:
+      0 0 0 1px oklch(0.3 0.03 262 / 0.1),
+      inset 0 1px 0 oklch(1 0 0 / 0.7),
+      0 14px 34px -12px oklch(0.25 0.04 262 / 0.28);
+  }
+
   /* Stagger children of a .stagger container as they fade up. */
   .stagger > * {
     @apply animate-fade-up;
