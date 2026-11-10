@@ -3,6 +3,64 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 export type Database = {
   public: {
     Tables: {
+      autopilot_runs: {
+        Row: {
+          created_at: string;
+          delivery_date: string | null;
+          error: string | null;
+          finished_at: string | null;
+          headline: string | null;
+          id: string;
+          notes: NonNullable<Json>;
+          optimization_run_id: string | null;
+          org_id: string;
+          status: string;
+          used_ai: boolean;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          delivery_date?: string | null;
+          error?: string | null;
+          finished_at?: string | null;
+          headline?: string | null;
+          id?: string;
+          notes?: NonNullable<Json>;
+          optimization_run_id?: string | null;
+          org_id: string;
+          status?: string;
+          used_ai: boolean;
+        };
+        Update: {
+          created_at?: string;
+          delivery_date?: string | null;
+          error?: string | null;
+          finished_at?: string | null;
+          headline?: string | null;
+          id?: string;
+          notes?: NonNullable<Json>;
+          optimization_run_id?: string | null;
+          org_id?: string;
+          status?: string;
+          used_ai?: boolean;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "autopilot_runs_optimization_run_id_org_id_fkey";
+            columns: ["optimization_run_id", "org_id"];
+            isOneToOne: false;
+            referencedRelation: "optimization_runs";
+            referencedColumns: ["id", "org_id"];
+          },
+          {
+            foreignKeyName: "autopilot_runs_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "buyer_orgs";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       buyer_orgs: {
         Row: {
           created_at: string;

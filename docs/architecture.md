@@ -4,7 +4,7 @@
 
 ```
 apps/web/               Next.js 16 (App Router) + TypeScript + Tailwind v4 + shadcn/ui-style components
-  src/app/              Routes: / (landing, (marketing)); the app in (app): /home, /stock, /cart, /lists,
+  src/app/              Routes: / (landing, (marketing)); the app in (app): /home (+ Autopilot), /stock, /cart, /lists,
                         /results, /orders, /suppliers, /suppliers/[id], /settings
   src/lib/catalog/      CatalogRepository interface + SeedCatalogRepository (server-only)
   src/lib/              units, delivery dates, freshness policy, money formatting
@@ -112,6 +112,36 @@ Browser -> server action findBestPrice()
   and they check membership, that the run belongs to the org and has a plan, and that line totals
   add up. Reads and draft deletes are plain RLS.
 - SupplyPilot never sends a PO anywhere. Export is the only outbound path.
+
+## Autopilot (Home)
+
+One tap on Home plans the next order. An agent picks the steps; the steps are the same server
+code a buyer's own clicks run, so it can't do anything the buyer couldn't.
+
+```
+Home "Plan it for me" -> POST /home/autopilot (same-origin, signed in)  streams NDJSON events
+   runAgent()  Claude (claude-opus-5-5, tool use, effort low) chooses among five tools:
+     check_stock          loadStock(): soonest bookable date, what runs out, how much to order
+     draft_order          replaces the Smart Cart with that order (optionally leaving items out)
+     check_vendor_quotes  the buyer's screenshot quotes vs the best catalog price (informational)
+     price_order          priceCart(): the same Find My Best Price code; saves an optimization run
+     present_plan         a headline and up to 3 notes. Ends the run.
+   -> autopilot_runs row (plan, notes) -> Home shows the plan card
+Plan card "Approve and create N draft POs" -> approveResult() (the existing explicit approve)
+```
+- **Numbers never come from the AI.** Tools compute and format every figure; the plan card's total,
+  savings and suppliers are read back from the stored optimization run. The agent only orders the
+  steps, handles exceptions (e.g. leave out an item no supplier can fill, then re-price) and
+  writes the notes. It's told the catalog's clock so dates line up with the demo data.
+- **It stops before POs.** Creating POs is the buyer's tap; nothing is ever sent to a supplier.
+- **No AI? Same steps.** Without `ANTHROPIC_API_KEY`, or past `AUTOPILOT_AI_RUNS_PER_HOUR` (default
+  10 per org), or if Claude fails mid-run, a fixed script runs the remaining steps, and the screen
+  says so. At most 10 turns and 3 pricings per run.
+- `autopilot_runs` is org-scoped with RLS; buyers can start and finish runs, never delete them, and
+  a run can only point at its own org's optimization run (composite FK).
+- Tests: unit tests drive the loop with a fake Claude and fake tools; e2e uses the mock Messages
+  API (`e2e/mock-anthropic.mjs`), which plays a fixed agent (`MOCK_AI_DELAY_MS` slows it down for
+  demos).
 
 ## Vendor prices from screenshots
 
