@@ -54,6 +54,23 @@ export interface OptimizationRun {
 
 export type OptimizationRunSummary = Omit<OptimizationRun, "request" | "response">;
 
+/** A shelf count. The latest one per product is what's on hand. */
+export interface StockCount {
+  productId: string;
+  /** Decimal string, never a float. */
+  quantity: string;
+  unit: string;
+  countedAt: Date;
+}
+
+/** How much of a product was used in one week (week_start is a Monday). */
+export interface StockUsageWeek {
+  productId: string;
+  weekStart: string;
+  quantity: string;
+  unit: string;
+}
+
 export interface BuyerStateRepository {
   readonly orgId: string;
 
@@ -77,6 +94,15 @@ export interface BuyerStateRepository {
 
   listFavorites(): Promise<string[]>;
   setFavorite(productId: string, favorite: boolean): Promise<void>;
+
+  /** Latest count per product. */
+  listStockCounts(): Promise<StockCount[]>;
+  /** Weekly usage, oldest first. */
+  listStockUsage(): Promise<StockUsageWeek[]>;
+  /** Appends counts (timestamped by the database). History is never edited. */
+  recordStockCounts(
+    counts: { product_id: string; quantity: string; unit: string }[],
+  ): Promise<void>;
 
   saveRun(request: OptimizeRequest, response: OptimizeResponse): Promise<string>;
   getRun(id: string): Promise<OptimizationRun | null>;
