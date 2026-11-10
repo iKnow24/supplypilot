@@ -29,6 +29,7 @@ describe("planLine", () => {
     expect(line.atDelivery).toBe(60);
     expect(line.status).toBe("order");
     expect(line.runsOutOn).toBe("2026-11-12");
+    expect(line.daysLeft).toBe(7);
   });
 
   it("subtracts what was used since the count", () => {
