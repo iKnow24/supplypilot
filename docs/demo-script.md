@@ -26,6 +26,18 @@ they never see each other's carts, lists, results or orders.
 4. **Delivery date**: pick **Tue, Nov 10**. Kestrel "doesn't deliver on Tuesdays (delivers Mon, Wed,
    Fri)", and Pelican "does not deliver to your area".
 
+## 1b. Autopilot: the agent does the work (Third Shift Coffee, about 1 minute)
+
+1. Switch to **Third Shift Coffee**. On **Home**, **Your next order** → **Plan it for me**.
+2. Watch the steps land one by one: pantry checked, order drafted, vendor quotes compared, priced
+   across every supplier. With a real key, Claude notices bananas can't reach Citrus Row's minimum,
+   leaves them out and re-prices (about 10 seconds).
+3. The plan card: total, savings against the usual suppliers, each supplier's share, and three
+   short notes. Every number comes from the optimizer, not the AI. **See what Autopilot did**
+   shows each step.
+4. **Approve and create 1 draft PO**: the only step that creates anything, and nothing is sent.
+   No key on the server? The same steps run without AI, and the card says so.
+
 ## 2. Honest results, even when the order can't be filled exactly
 
 5. **Find My Best Price** gives **$1,316.33 for 13 of 14 items**.

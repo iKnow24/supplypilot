@@ -18,6 +18,8 @@ import {
   type VendorPrice,
 } from "../vendor-prices/types";
 import {
+  type AutopilotOutcome,
+  type AutopilotRunRecord,
   BuyerStateError,
   type BuyerStateRepository,
   type Cart,
@@ -606,6 +608,73 @@ export class SupabaseBuyerStateRepository implements BuyerStateRepository {
       .eq("org_id", this.orgId)
       .gte("created_at", since);
     if (countError) fail(countError, "start reading the image");
+    return count ?? 0;
+  }
+
+  async startAutopilotRun(usedAi: boolean) {
+    const { data, error } = await this.db
+      .from("autopilot_runs")
+      .insert({ org_id: this.orgId, used_ai: usedAi })
+      .select("id")
+      .single();
+    if (error) fail(error, "start Autopilot");
+    return data.id;
+  }
+
+  async finishAutopilotRun(id: string, o: AutopilotOutcome) {
+    const { error } = await this.db
+      .from("autopilot_runs")
+      .update({
+        status: o.status,
+        finished_at: new Date().toISOString(),
+        delivery_date: o.deliveryDate,
+        optimization_run_id: o.optimizationRunId,
+        headline: o.headline?.slice(0, 200) ?? null,
+        notes: o.notes.slice(0, 5),
+        error: o.error?.slice(0, 300) ?? null,
+      })
+      .eq("org_id", this.orgId)
+      .eq("id", id);
+    if (error) fail(error, "save the Autopilot plan");
+  }
+
+  async latestAutopilotRun(): Promise<AutopilotRunRecord | null> {
+    const { data, error } = await this.db
+      .from("autopilot_runs")
+      .select(
+        "id, created_at, status, used_ai, delivery_date, optimization_run_id, headline, notes, error",
+      )
+      .eq("org_id", this.orgId)
+      .neq("status", "running")
+      .order("created_at", { ascending: false })
+      .limit(1);
+    if (error) fail(error, "load Autopilot");
+    const r = data[0];
+    if (!r) return null;
+    return {
+      id: r.id,
+      createdAt: new Date(r.created_at),
+      status: r.status === "planned" ? "planned" : "failed",
+      usedAi: r.used_ai,
+      deliveryDate: r.delivery_date,
+      optimizationRunId: r.optimization_run_id,
+      headline: r.headline,
+      notes: Array.isArray(r.notes)
+        ? r.notes.filter((n): n is string => typeof n === "string")
+        : [],
+      error: r.error,
+    };
+  }
+
+  async countRecentAiAutopilotRuns() {
+    const since = new Date(Date.now() - 3_600_000).toISOString();
+    const { count, error } = await this.db
+      .from("autopilot_runs")
+      .select("id", { count: "exact", head: true })
+      .eq("org_id", this.orgId)
+      .eq("used_ai", true)
+      .gte("created_at", since);
+    if (error) fail(error, "start Autopilot");
     return count ?? 0;
   }
 }

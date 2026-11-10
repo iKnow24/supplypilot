@@ -1,4 +1,4 @@
-import { ArrowRight, Boxes, ShoppingCart } from "lucide-react";
+import { ArrowRight, Boxes, ShoppingCart, Sparkles } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -124,6 +124,12 @@ export default async function StockPage({ searchParams }: PageProps<"/stock">) {
                   <p className="text-muted-foreground text-xs">
                     Replaces what&apos;s in your cart. Nothing is sent until you approve.
                   </p>
+                  <Link
+                    href="/home#autopilot"
+                    className="text-primary inline-flex items-center gap-1.5 text-sm font-medium hover:underline"
+                  >
+                    <Sparkles className="size-4" aria-hidden /> Or let Autopilot plan and price it
+                  </Link>
                 </form>
               ) : null}
             </div>

@@ -3,13 +3,19 @@
  * key). The web app talks to it through the real SDK via ANTHROPIC_BASE_URL, so request
  * building and structured-output parsing are exercised for real.
  *
- * It answers every request with the reading of e2e/fixtures/price-text.png, after checking the
- * request carries an image and an output schema like the app sends.
+ * Two kinds of request:
+ *  - price screenshots (an image + an output schema): answers with the reading of
+ *    e2e/fixtures/price-text.png;
+ *  - Autopilot (tools): plays a fixed agent, one tool step per turn, based on which tools have
+ *    already returned: check_stock -> draft_order -> check_vendor_quotes + price_order
+ *    (in parallel) -> present_plan.
  *   node e2e/mock-anthropic.mjs [port]
  */
 import { createServer } from "node:http";
 
 const port = Number(process.argv[2] ?? process.env.MOCK_ANTHROPIC_PORT ?? 4010);
+// Optional pause before each Autopilot turn, to watch the steps arrive (screenshots, demos).
+const agentDelayMs = Number(process.env.MOCK_AI_DELAY_MS ?? 0);
 
 export const READING = {
   is_price_document: true,
@@ -61,6 +67,58 @@ export const READING = {
   ],
 };
 
+/** The next Autopilot turn, from the tool results so far. */
+function agentTurn(body) {
+  const names = new Map(); // tool_use id -> name
+  const results = new Map(); // name -> parsed result
+  for (const m of body.messages) {
+    if (!Array.isArray(m.content)) continue;
+    for (const b of m.content) {
+      if (b.type === "tool_use") names.set(b.id, b.name);
+      if (b.type === "tool_result") {
+        let parsed = null;
+        try {
+          parsed = JSON.parse(b.content);
+        } catch {}
+        results.set(names.get(b.tool_use_id), parsed);
+      }
+    }
+  }
+  const turn = names.size;
+  const callTool = (name, input) => ({
+    type: "tool_use",
+    id: `toolu_${turn}_${name}`,
+    name,
+    input,
+  });
+  let content;
+  if (!results.has("check_stock")) {
+    content = [{ type: "text", text: "Checking the pantry first." }, callTool("check_stock", {})];
+  } else if (!results.has("draft_order")) {
+    const date = results.get("check_stock")?.planned_for ?? "2026-11-10";
+    content = [callTool("draft_order", { delivery_date: date, remove_product_ids: [] })];
+  } else if (!results.has("price_order")) {
+    content = [callTool("check_vendor_quotes", {}), callTool("price_order", {})];
+  } else {
+    content = [
+      callTool("present_plan", {
+        headline: "Your next order is priced and ready to approve",
+        notes: ["Split across suppliers so each one's minimum is met.", "Nothing was left out."],
+      }),
+    ];
+  }
+  return {
+    id: `msg_agent_${turn}`,
+    type: "message",
+    role: "assistant",
+    model: body.model,
+    content,
+    stop_reason: "tool_use",
+    stop_sequence: null,
+    usage: { input_tokens: 2000, output_tokens: 120 },
+  };
+}
+
 function reply(res, status, body) {
   res.writeHead(status, { "content-type": "application/json" });
   res.end(JSON.stringify(body));
@@ -75,6 +133,9 @@ createServer((req, res) => {
   req.on("data", (c) => (raw += c));
   req.on("end", () => {
     const body = JSON.parse(raw);
+    if (Array.isArray(body.tools) && body.tools.some((t) => t.name === "check_stock")) {
+      return setTimeout(() => reply(res, 200, agentTurn(body)), agentDelayMs);
+    }
     const content = body.messages?.[0]?.content ?? [];
     const hasImage = content.some((b) => b.type === "image" && b.source?.data);
     if (!hasImage || body.output_config?.format?.type !== "json_schema") {

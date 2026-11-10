@@ -128,6 +128,29 @@ export interface BuyerStateRepository {
   deletePriceImport(id: string): Promise<boolean>;
   /** Logs one image sent to the AI, and returns how many were sent in the last hour. */
   logPriceRead(): Promise<number>;
+
+  /** Records the start of an Autopilot run. Returns its id. */
+  startAutopilotRun(usedAi: boolean): Promise<string>;
+  finishAutopilotRun(id: string, outcome: AutopilotOutcome): Promise<void>;
+  /** The newest run, if any. */
+  latestAutopilotRun(): Promise<AutopilotRunRecord | null>;
+  /** AI-driven runs started in the last hour (for the cap). */
+  countRecentAiAutopilotRuns(): Promise<number>;
+}
+
+export interface AutopilotOutcome {
+  status: "planned" | "failed";
+  deliveryDate: string | null;
+  optimizationRunId: string | null;
+  headline: string | null;
+  notes: string[];
+  error: string | null;
+}
+
+export interface AutopilotRunRecord extends AutopilotOutcome {
+  id: string;
+  usedAi: boolean;
+  createdAt: Date;
 }
 
 /** An error whose message is safe and useful to show the buyer. */

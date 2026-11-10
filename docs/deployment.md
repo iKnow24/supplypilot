@@ -141,6 +141,7 @@ the key, and prices a basket with it.
    | `DEMO_AUTH` | `on`, but **only** for the synthetic demo (see below) |
    | `ANTHROPIC_API_KEY` | optional, *sensitive*. Turns on "Add prices from a screenshot" (Claude reads the image). Without it the page says reading is off |
    | `PRICE_READS_PER_HOUR` | optional cap on screenshots read per buyer org per hour (default 10) |
+   | `AUTOPILOT_AI_RUNS_PER_HOUR` | optional cap on Claude-driven Autopilot runs per buyer org per hour (default 10); past it, Autopilot runs its fixed steps |
 
 3. Deploy, then check:
    - `curl -sI https://<your-app>/ | grep -iE "content-security|x-frame|strict-transport"`
