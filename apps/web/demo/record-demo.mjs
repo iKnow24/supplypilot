@@ -118,7 +118,9 @@ async function click(locator, { pause = 350, ms = 750 } = {}) {
 }
 
 async function scrollIntoView(locator, block = "center") {
-  await locator.first().evaluate((el, b) => el.scrollIntoView({ behavior: "smooth", block: b }), block);
+  await locator
+    .first()
+    .evaluate((el, b) => el.scrollIntoView({ behavior: "smooth", block: b }), block);
   await sleep(900);
 }
 
@@ -169,10 +171,14 @@ async function uploadCsv(csv) {
   await goto("/cart");
   const chooser = page.waitForEvent("filechooser");
   await click(page.getByText("Choose CSV file").first(), { pause: 200 });
-  await (await chooser).setFiles({ name: "weekly-order.csv", mimeType: "text/csv", buffer: Buffer.from(csv) });
+  await (
+    await chooser
+  ).setFiles({ name: "weekly-order.csv", mimeType: "text/csv", buffer: Buffer.from(csv) });
   await page.getByText(/\d+\s*rows? ready/).waitFor();
   await sleep(1400);
-  await click(page.getByRole("button", { name: /^(Replace cart with these \d+|Import \d+ items?)$/ }));
+  await click(
+    page.getByRole("button", { name: /^(Replace cart with these \d+|Import \d+ items?)$/ }),
+  );
   await page.getByRole("status", { name: "Updates" }).getByText("Imported").waitFor();
   await sleep(900);
 }
@@ -228,14 +234,26 @@ await sleep(3600);
 await card(null, 900);
 
 // 1. Home
-await caption("The problem", "Independent bakeries and cafés buy from 3–5 distributors every week. Each has its own prices, packs, fees, minimums and delivery days.", 5200);
-await caption("SupplyPilot", "The buyer builds one list. We find the lowest total delivered cost, and explain why.", 3600);
+await caption(
+  "The problem",
+  "Independent bakeries and cafés buy from 3–5 distributors every week. Each has its own prices, packs, fees, minimums and delivery days.",
+  5200,
+);
+await caption(
+  "SupplyPilot",
+  "The buyer builds one list. We find the lowest total delivered cost, and explain why.",
+  3600,
+);
 
 // 2. Lists -> cart
 await click(page.getByRole("link", { name: "Lists", exact: true }).first());
 await page.waitForURL(/\/lists$/);
 await sleep(600);
-await caption("1 · One list", "Sunday Crumb Bakery's saved weekly order: 14 items, each from the supplier they usually use.", 2800);
+await caption(
+  "1 · One list",
+  "Sunday Crumb Bakery's saved weekly order: 14 items, each from the supplier they usually use.",
+  2800,
+);
 await click(
   page
     .getByRole("listitem")
@@ -245,7 +263,11 @@ await click(
 await page.waitForURL(/\/cart$/);
 await page.waitForLoadState("networkidle");
 await sleep(900);
-await caption("1 · One list", "That habit is the baseline. Every saving we show is measured against it, never an estimate.", 3200);
+await caption(
+  "1 · One list",
+  "That habit is the baseline. Every saving we show is measured against it, never an estimate.",
+  3200,
+);
 await scrollTo(260);
 await sleep(1200);
 await scrollTo(0);
@@ -261,17 +283,39 @@ await page.keyboard.press("Enter");
 await sleep(1600);
 
 // 4. Delivery date
-await caption("2 · Delivery day", "Pick a date. We show which suppliers can deliver it, and why the others can't.", 0);
+await caption(
+  "2 · Delivery day",
+  "Pick a date. We show which suppliers can deliver it, and why the others can't.",
+  0,
+);
 await pickDate(/Tuesday, Nov 10/);
 await spotlight(page.getByText("Tuesday, Nov 10", { exact: true }).locator("..").first(), 3800);
 await scrollTo(0);
 
 // 5. Best price (partial)
-await caption("3 · Find My Best Price", "One click. An exact optimizer prices every pack, fee, minimum and stock level.", 0);
+await caption(
+  "3 · Find My Best Price",
+  "One click. An exact optimizer prices every pack, fee, minimum and stock level.",
+  0,
+);
 await findBestPrice();
-await caption("Honest results", "$1,316.33 for 13 of 14 items. Strawberries are left out, with the reason.", 3400);
-await spotlight(page.getByText(/couldn't be included/).first().locator(".."), 3200);
-await caption("Honest results", "When your usual suppliers are already cheapest, we say so. We don't invent savings.", 0);
+await caption(
+  "Honest results",
+  "$1,316.33 for 13 of 14 items. Strawberries are left out, with the reason.",
+  3400,
+);
+await spotlight(
+  page
+    .getByText(/couldn't be included/)
+    .first()
+    .locator(".."),
+  3200,
+);
+await caption(
+  "Honest results",
+  "When your usual suppliers are already cheapest, we say so. We don't invent savings.",
+  0,
+);
 await page.mouse.wheel(0, 0);
 await scrollTo(520);
 await sleep(2400);
@@ -280,7 +324,11 @@ await sleep(2600);
 
 // 6. Third Shift Coffee: cheapest items != cheapest basket
 await switchBuyer("org_thirdshift");
-await caption("4 · Cheapest items ≠ cheapest order", "Third Shift Coffee uploads a spreadsheet: milk and oat milk for Wednesday.", 0);
+await caption(
+  "4 · Cheapest items ≠ cheapest order",
+  "Third Shift Coffee uploads a spreadsheet: milk and oat milk for Wednesday.",
+  0,
+);
 await uploadCsv("product,quantity,unit\nprd_milk_whole,16,gal\nprd_oat_milk,12,qt\n");
 await scrollTo(0);
 await pickDate(/Wednesday, Nov 11/);
@@ -288,11 +336,22 @@ await scrollTo(0);
 await findBestPrice();
 await caption("4 · Cheapest items ≠ cheapest order", "$132.60 delivered from Meadowlark.", 2200);
 await spotlight(page.getByText(/Pelican has the lowest per-item price/).first(), 3800);
-await caption("4 · Cheapest items ≠ cheapest order", "Pelican's item prices are lower, but its $45 delivery fee makes it $18.30 more.", 0);
-await spotlight(page.getByRole("table", { name: "Alternative orders compared to the best price" }), 4200);
+await caption(
+  "4 · Cheapest items ≠ cheapest order",
+  "Pelican's item prices are lower, but its $45 delivery fee makes it $18.30 more.",
+  0,
+);
+await spotlight(
+  page.getByRole("table", { name: "Alternative orders compared to the best price" }),
+  4200,
+);
 
 // 7. Approve -> PO -> PDF
-await caption("5 · Plan to purchase order", "Approve the plan. Nothing is created until the buyer confirms.", 0);
+await caption(
+  "5 · Plan to purchase order",
+  "Approve the plan. Nothing is created until the buyer confirms.",
+  0,
+);
 await click(page.getByRole("button", { name: "Approve plan" }));
 await sleep(1600);
 await click(page.getByRole("button", { name: /^Create \d+ draft POs?$/ }));
@@ -301,14 +360,26 @@ await click(page.getByRole("link", { name: /^THI-\d{6}-\d{3} · Meadowlark/ }).f
 await page.waitForURL(/\/orders\/[0-9a-f-]{36}$/);
 await page.waitForLoadState("networkidle");
 await sleep(700);
-await caption("5 · Plan to purchase order", "A draft PO with SKUs, packs, pack prices and the supplier's order cutoff.", 3600);
-await caption("5 · Plan to purchase order", "Download it as PDF or CSV. SupplyPilot never sends anything to a supplier on its own.", 0);
+await caption(
+  "5 · Plan to purchase order",
+  "A draft PO with SKUs, packs, pack prices and the supplier's order cutoff.",
+  3600,
+);
+await caption(
+  "5 · Plan to purchase order",
+  "Download it as PDF or CSV. SupplyPilot never sends anything to a supplier on its own.",
+  0,
+);
 const download = page.waitForEvent("download");
 await click(page.getByRole("button", { name: "Download PDF" }));
 await download;
 await sleep(1200);
 await spotlight(page.getByText("Exported", { exact: true }).first(), 2400);
-await caption("Next week", "Reorder puts the same packs back in the cart, and next week's run measures savings against it.", 3600);
+await caption(
+  "Next week",
+  "Reorder puts the same packs back in the cart, and next week's run measures savings against it.",
+  3600,
+);
 
 // 8. End
 await caption(null, null);
@@ -326,7 +397,10 @@ await browser.close();
 const lines = [];
 for (let i = 0; i < frames.length; i++) {
   const next = frames[i + 1]?.t ?? frames[i].t + 0.5;
-  lines.push(`file '${frames[i].file}'`, `duration ${Math.max(0.001, next - frames[i].t).toFixed(4)}`);
+  lines.push(
+    `file '${frames[i].file}'`,
+    `duration ${Math.max(0.001, next - frames[i].t).toFixed(4)}`,
+  );
 }
 lines.push(`file '${frames.at(-1).file}'`);
 const list = path.join(FRAMES, "frames.txt");
@@ -335,10 +409,25 @@ mkdirSync(path.dirname(OUT), { recursive: true });
 execFileSync(
   "ffmpeg",
   [
-    "-y", "-loglevel", "error",
-    "-f", "concat", "-safe", "0", "-i", list,
-    "-vf", "scale=1920:1080:flags=lanczos,fps=30,format=yuv420p",
-    "-c:v", "libx264", "-preset", "slow", "-crf", "18", "-movflags", "+faststart",
+    "-y",
+    "-loglevel",
+    "error",
+    "-f",
+    "concat",
+    "-safe",
+    "0",
+    "-i",
+    list,
+    "-vf",
+    "scale=1920:1080:flags=lanczos,fps=30,format=yuv420p",
+    "-c:v",
+    "libx264",
+    "-preset",
+    "slow",
+    "-crf",
+    "18",
+    "-movflags",
+    "+faststart",
     OUT,
   ],
   { stdio: "inherit" },

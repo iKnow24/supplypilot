@@ -116,7 +116,10 @@
     if (instant) cap.style.transition = "none";
     cap.style.opacity = "1";
     cap.style.transform = "translate(-50%, 0)";
-    if (instant) requestAnimationFrame(() => (cap.style.transition = "opacity 350ms ease, transform 350ms ease"));
+    if (instant)
+      requestAnimationFrame(
+        () => (cap.style.transition = "opacity 350ms ease, transform 350ms ease"),
+      );
   }
 
   window.__spDemo = {

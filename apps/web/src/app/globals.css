@@ -86,6 +86,8 @@
   --animate-glow: glow 6s ease-in-out infinite;
   --animate-shimmer: shimmer 2.4s linear infinite;
   --animate-marquee: marquee 40s linear infinite;
+  --animate-float: float 7s ease-in-out infinite;
+  --animate-ping-slow: ping-slow 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
 
   @keyframes fade-up {
     from {
@@ -124,6 +126,22 @@
     }
     to {
       background-position: -200% 0;
+    }
+  }
+  @keyframes float {
+    0%,
+    100% {
+      translate: 0 0;
+    }
+    50% {
+      translate: 0 -8px;
+    }
+  }
+  @keyframes ping-slow {
+    75%,
+    100% {
+      transform: scale(2.4);
+      opacity: 0;
     }
   }
   @keyframes marquee {
@@ -263,6 +281,9 @@
     background: linear-gradient(180deg, oklch(0.21 0.007 250), oklch(0.175 0.006 250));
     border: 1px solid var(--l-line);
     box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.06);
+  }
+  .landing-faq summary::-webkit-details-marker {
+    display: none;
   }
   .landing-card:hover {
     border-color: oklch(1 0 0 / 0.16);
