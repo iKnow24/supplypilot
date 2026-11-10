@@ -19,27 +19,23 @@ import {
   Truck,
 } from "lucide-react";
 import type { Metadata } from "next";
-import { Fraunces } from "next/font/google";
 import Link from "next/link";
 import { connection } from "next/server";
 import type { ReactNode } from "react";
 
-import { LogoMark } from "@/components/app/logo";
+import { Logo, LogoMark, Wordmark } from "@/components/app/logo";
 import { EngineDemo } from "@/components/landing/engine-demo";
 import { Photo } from "@/components/landing/photo";
 import { cn } from "@/lib/utils";
-
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  variable: "--font-fraunces",
-  axes: ["SOFT", "WONK", "opsz"],
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: { absolute: "SupplyPilot · Buy your kitchen's ingredients for less" },
   description:
     "For independent bakeries, cafés and restaurants. One list, every supplier, the lowest total delivered cost, and exactly why.",
+  openGraph: {
+    title: "SupplyPilot · Stop overpaying for every delivery",
+    description: "One list, every supplier, the lowest total delivered cost, and exactly why.",
+  },
 };
 
 /* ------------------------------------------------------------------ content */
@@ -242,8 +238,8 @@ function Cta({
       className={cn(
         "group inline-flex h-12 items-center justify-center gap-2 rounded-full px-7 text-[15px] font-semibold transition-all active:translate-y-px",
         variant === "primary" &&
-          "bg-forest hover:bg-forest-deep text-white shadow-[0_10px_24px_-10px_oklch(0.4_0.085_158/0.8)]",
-        variant === "light" && "text-forest-deep hover:bg-cream bg-white",
+          "bg-navy hover:bg-navy-deep text-white shadow-[0_10px_24px_-10px_oklch(0.3_0.065_262/0.7)]",
+        variant === "light" && "text-navy-deep hover:bg-cream bg-white",
         className,
       )}
     >
@@ -255,7 +251,7 @@ function Cta({
 
 function Eyebrow({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <p className={cn("text-forest text-[13px] font-bold tracking-[0.16em] uppercase", className)}>
+    <p className={cn("text-navy text-[13px] font-bold tracking-[0.16em] uppercase", className)}>
       {children}
     </p>
   );
@@ -281,9 +277,9 @@ export default async function LandingPage() {
   // Render per request so Next can stamp its scripts with this request's CSP nonce.
   await connection();
   return (
-    <div className={cn("market min-h-dvh overflow-x-clip", fraunces.variable)}>
+    <div className="market min-h-dvh overflow-x-clip">
       {/* ------------------------------------------------------------ promo bar */}
-      <div className="bg-forest-deep text-cream">
+      <div className="bg-navy-deep text-cream">
         <p className="mx-auto flex max-w-7xl items-center justify-center gap-2 px-5 py-2.5 text-center text-[13px] font-medium">
           <span className="bg-butter text-ink rounded-full px-2 py-0.5 text-[11px] font-bold tracking-wide uppercase">
             New
@@ -298,14 +294,7 @@ export default async function LandingPage() {
       {/* ------------------------------------------------------------ header */}
       <header className="border-ink/10 bg-cream/90 sticky top-0 z-50 border-b backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-7xl items-center gap-8 px-5">
-          <Link
-            href="/"
-            className="text-ink flex items-center gap-2.5 text-lg font-bold tracking-tight"
-            aria-label="SupplyPilot home"
-          >
-            <LogoMark className="size-8 rounded-[10px]" />
-            <span>SupplyPilot</span>
-          </Link>
+          <Logo className="text-ink text-[23px]" />
           <nav aria-label="Sections" className="hidden lg:block">
             <ul className="text-ink-soft flex gap-1 text-[15px] font-semibold">
               {[
@@ -328,7 +317,7 @@ export default async function LandingPage() {
           </nav>
           <Link
             href="/home"
-            className="bg-forest hover:bg-forest-deep ml-auto inline-flex h-10 items-center gap-1.5 rounded-full px-5 text-sm font-semibold text-white transition-colors"
+            className="bg-navy hover:bg-navy-deep ml-auto inline-flex h-10 items-center gap-1.5 rounded-full px-5 text-sm font-semibold text-white transition-colors"
           >
             Try the live demo <ArrowRight className="size-3.5" aria-hidden />
           </Link>
@@ -349,7 +338,7 @@ export default async function LandingPage() {
                 id="hero-title"
                 className="font-display text-ink mt-5 text-[3.1rem] leading-[0.98] font-semibold sm:text-7xl lg:text-[5.4rem]"
               >
-                Stop overpaying for <span className="scribble text-forest">every delivery.</span>
+                Stop overpaying for <span className="scribble text-navy">every delivery.</span>
               </h1>
               <p className="text-ink-soft mt-7 max-w-xl text-lg leading-relaxed sm:text-xl">
                 Put this week&apos;s order on one list. SupplyPilot checks every supplier&apos;s
@@ -368,7 +357,7 @@ export default async function LandingPage() {
               <ul className="text-ink-soft mt-7 flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium">
                 {["No sign-up", "Fictional suppliers", "Nothing is ever ordered"].map((t) => (
                   <li key={t} className="flex items-center gap-1.5">
-                    <span className="bg-leaf text-forest flex size-5 items-center justify-center rounded-full">
+                    <span className="bg-mist text-navy flex size-5 items-center justify-center rounded-full">
                       <Check className="size-3" aria-hidden />
                     </span>
                     {t}
@@ -398,7 +387,7 @@ export default async function LandingPage() {
               >
                 <div className="flex items-center justify-between">
                   <p className="text-ink text-sm font-bold">Wednesday&apos;s order</p>
-                  <span className="bg-leaf text-forest-deep rounded-full px-2 py-0.5 text-[10px] font-bold uppercase">
+                  <span className="bg-mist text-navy-deep rounded-full px-2 py-0.5 text-[10px] font-bold uppercase">
                     Best price
                   </span>
                 </div>
@@ -522,7 +511,7 @@ export default async function LandingPage() {
         <section
           id="features"
           aria-labelledby="features-title"
-          className="bg-forest-deep text-cream scroll-mt-20 py-24 sm:py-28"
+          className="bg-navy-deep text-cream scroll-mt-20 py-24 sm:py-28"
         >
           <div className="mx-auto grid max-w-7xl gap-12 px-5 lg:grid-cols-[0.9fr_1.4fr] lg:gap-16">
             <div>
@@ -577,7 +566,7 @@ export default async function LandingPage() {
                 </div>
                 <div className="p-6 pt-10">
                   <h3 className="text-ink flex items-center gap-2 text-xl font-bold">
-                    <s.icon className="text-forest size-5" aria-hidden />
+                    <s.icon className="text-navy size-5" aria-hidden />
                     {s.title}
                   </h3>
                   <p className="text-ink-soft mt-2 leading-relaxed">{s.body}</p>
@@ -613,7 +602,7 @@ export default async function LandingPage() {
                   "One tap sends it to Find My Best Price",
                 ].map((t) => (
                   <li key={t} className="text-ink flex gap-3 font-medium">
-                    <span className="bg-forest mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full text-white">
+                    <span className="bg-navy mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full text-white">
                       <Check className="size-3.5" aria-hidden />
                     </span>
                     {t}
@@ -637,7 +626,7 @@ export default async function LandingPage() {
                       We drafted 13 items for Tuesday, Nov 10
                     </p>
                   </div>
-                  <span className="bg-forest rounded-full px-3 py-1.5 text-xs font-bold text-white">
+                  <span className="bg-navy rounded-full px-3 py-1.5 text-xs font-bold text-white">
                     Price this order →
                   </span>
                 </div>
@@ -645,7 +634,7 @@ export default async function LandingPage() {
                   {[
                     ["9", "Run out first", "text-tomato"],
                     ["13", "To order", "text-ink"],
-                    ["1", "Enough", "text-forest"],
+                    ["1", "Enough", "text-navy"],
                   ].map(([n, l, c]) => (
                     <div key={l} className="bg-cream rounded-xl py-2.5">
                       <p className={cn("font-display text-2xl font-semibold", c)}>{n}</p>
@@ -676,7 +665,7 @@ export default async function LandingPage() {
                               className={cn(
                                 "w-1 rounded-sm",
                                 h,
-                                i === r.bars.length - 1 ? "bg-forest" : "bg-kraft",
+                                i === r.bars.length - 1 ? "bg-navy" : "bg-kraft",
                               )}
                             />
                           ))}
@@ -704,7 +693,7 @@ export default async function LandingPage() {
 
         {/* ------------------------------------------------------------ savings check */}
         <section aria-labelledby="check-title" className="mx-auto max-w-7xl px-5 py-24 sm:py-28">
-          <div className="bg-forest relative isolate grid overflow-hidden rounded-[2.5rem] lg:grid-cols-2">
+          <div className="bg-navy relative isolate grid overflow-hidden rounded-[2.5rem] lg:grid-cols-2">
             <div className="p-8 sm:p-12 lg:p-16">
               <Eyebrow className="text-butter">Free savings check</Eyebrow>
               <h2
@@ -733,7 +722,7 @@ export default async function LandingPage() {
                 className="paper absolute right-6 bottom-6 left-6 rounded-2xl p-4 sm:left-auto sm:w-72"
               >
                 <p className="text-ink flex items-center gap-2 text-sm font-bold">
-                  <Receipt className="text-forest size-4" /> 3 invoices in
+                  <Receipt className="text-navy size-4" /> 3 invoices in
                 </p>
                 <p className="text-ink-soft mt-1 text-xs">Bramblewood · Meadowlark · Citrus Row</p>
                 <p className="text-ink mt-3 text-xs font-semibold">
@@ -761,7 +750,7 @@ export default async function LandingPage() {
               <ul className="mt-10 grid grid-cols-2 gap-3">
                 {PROOF.map((p) => (
                   <li key={p.label} className="bg-cream rounded-2xl p-4">
-                    <p.icon className="text-forest size-5" aria-hidden />
+                    <p.icon className="text-navy size-5" aria-hidden />
                     <p className="font-display text-ink mt-3 text-2xl font-semibold">{p.stat}</p>
                     <p className="text-ink-soft mt-1 text-sm leading-snug">{p.label}</p>
                   </li>
@@ -771,7 +760,7 @@ export default async function LandingPage() {
             <ul className="space-y-4">
               {PRINCIPLES.map((p) => (
                 <li key={p.title} className="paper reveal flex gap-5 rounded-3xl p-6 sm:p-7">
-                  <span className="bg-leaf text-forest flex size-12 shrink-0 items-center justify-center rounded-2xl">
+                  <span className="bg-mist text-navy flex size-12 shrink-0 items-center justify-center rounded-2xl">
                     <p.icon className="size-6" aria-hidden />
                   </span>
                   <div>
@@ -806,7 +795,7 @@ export default async function LandingPage() {
               <details key={f.q} className="market-faq paper group rounded-2xl px-6">
                 <summary className="text-ink flex cursor-pointer list-none items-center justify-between gap-6 py-5 text-lg font-bold">
                   {f.q}
-                  <span className="bg-sand group-open:bg-forest flex size-8 shrink-0 items-center justify-center rounded-full transition-colors group-open:text-white">
+                  <span className="bg-sand group-open:bg-navy flex size-8 shrink-0 items-center justify-center rounded-full transition-colors group-open:text-white">
                     <Plus
                       className="size-4 transition-transform duration-300 group-open:rotate-45"
                       aria-hidden
@@ -844,12 +833,12 @@ export default async function LandingPage() {
       </main>
 
       {/* ------------------------------------------------------------ footer */}
-      <footer className="bg-forest-deep text-cream">
+      <footer className="bg-navy-deep text-cream">
         <div className="mx-auto grid max-w-7xl gap-10 px-5 py-16 sm:grid-cols-[1.6fr_1fr_1fr]">
           <div>
-            <div className="flex items-center gap-2.5 text-lg font-bold text-white">
-              <LogoMark className="size-8 rounded-[10px]" />
-              SupplyPilot
+            <div className="flex items-center gap-3 text-[26px] leading-none text-white">
+              <LogoMark tone="cream" className="size-[1.5em]" />
+              <Wordmark />
             </div>
             <p className="text-cream/85 mt-4 max-w-sm leading-relaxed">
               Buy your kitchen&apos;s ingredients for less. One list, every supplier, the lowest

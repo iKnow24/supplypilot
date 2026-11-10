@@ -9,47 +9,51 @@
  * Token names follow shadcn/ui so `npx shadcn add <component>` drops in cleanly.
  */
 :root {
+  /*
+   * App palette, warmed to match the brand: bone paper instead of cool grey, navy for
+   * action, ink with a navy undertone. Every text/background pair meets WCAG AA.
+   */
   --radius: 0.75rem;
-  --background: oklch(0.982 0.002 247);
-  --foreground: oklch(0.18 0.012 256);
-  --card: oklch(1 0 0);
+  --background: oklch(0.978 0.007 85);
+  --foreground: oklch(0.21 0.03 262);
+  --card: oklch(0.997 0.002 85);
   --card-foreground: var(--foreground);
-  --popover: oklch(1 0 0);
+  --popover: oklch(0.997 0.002 85);
   --popover-foreground: var(--foreground);
-  --primary: oklch(0.47 0.105 163);
-  --primary-strong: oklch(0.4 0.09 164);
-  --primary-foreground: oklch(0.99 0.005 165);
-  --secondary: oklch(0.962 0.003 247);
+  --primary: oklch(0.32 0.068 262);
+  --primary-strong: oklch(0.25 0.055 262);
+  --primary-foreground: oklch(0.985 0.01 85);
+  --secondary: oklch(0.95 0.01 85);
   --secondary-foreground: var(--foreground);
-  --muted: oklch(0.962 0.003 247);
-  --muted-foreground: oklch(0.46 0.014 257);
-  --accent: oklch(0.955 0.03 165);
-  --accent-foreground: oklch(0.36 0.08 165);
-  --border: oklch(0.918 0.004 250);
-  --input: oklch(0.88 0.005 250);
-  --ring: oklch(0.58 0.12 163);
-  --sidebar: oklch(0.972 0.003 247);
-  --success: oklch(0.45 0.1 163);
-  --success-soft: oklch(0.95 0.035 165);
+  --muted: oklch(0.95 0.01 85);
+  --muted-foreground: oklch(0.47 0.02 262);
+  --accent: oklch(0.945 0.018 255);
+  --accent-foreground: oklch(0.3 0.065 262);
+  --border: oklch(0.905 0.012 80);
+  --input: oklch(0.86 0.014 80);
+  --ring: oklch(0.5 0.11 262);
+  --sidebar: oklch(0.962 0.012 82);
+  --success: oklch(0.43 0.09 159);
+  --success-soft: oklch(0.945 0.035 158);
   --warning: oklch(0.47 0.11 65);
   --warning-soft: oklch(0.965 0.045 85);
-  --destructive: oklch(0.5 0.17 27);
-  --destructive-soft: oklch(0.965 0.025 27);
+  --destructive: oklch(0.5 0.17 30);
+  --destructive-soft: oklch(0.962 0.025 35);
   /* Stock levels (charts and container fills only; text uses the tokens above for contrast). */
-  --level-short: oklch(0.66 0.18 25);
-  --level-short-soft: oklch(0.88 0.07 22);
+  --level-short: oklch(0.64 0.17 32);
+  --level-short-soft: oklch(0.88 0.07 30);
   --level-order: oklch(0.8 0.14 78);
   --level-order-soft: oklch(0.93 0.08 88);
-  --level-ok: oklch(0.68 0.12 165);
-  --level-ok-soft: oklch(0.9 0.06 165);
+  --level-ok: oklch(0.62 0.1 158);
+  --level-ok-soft: oklch(0.9 0.05 158);
 
-  /* Layered shadows: a hairline ring plus a soft, short drop. */
+  /* Layered shadows: a hairline ring plus a soft, warm drop. */
   --shadow-card:
-    0 0 0 1px oklch(0.2 0.01 256 / 0.06), 0 1px 2px oklch(0.2 0.01 256 / 0.05),
-    0 2px 6px -2px oklch(0.2 0.01 256 / 0.05);
+    0 0 0 1px oklch(0.3 0.03 70 / 0.07), 0 1px 2px oklch(0.3 0.03 70 / 0.05),
+    0 2px 6px -2px oklch(0.3 0.03 70 / 0.06);
   --shadow-raised:
-    0 0 0 1px oklch(0.2 0.01 256 / 0.06), 0 2px 4px oklch(0.2 0.01 256 / 0.05),
-    0 12px 24px -8px oklch(0.2 0.01 256 / 0.12);
+    0 0 0 1px oklch(0.3 0.03 70 / 0.07), 0 2px 4px oklch(0.3 0.03 70 / 0.05),
+    0 14px 28px -10px oklch(0.3 0.04 70 / 0.16);
 }
 
 @theme inline {
@@ -57,17 +61,18 @@
   --font-mono: var(--font-geist-mono);
   --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
 
-  /* Landing page: a warm market palette (cream, forest green, tomato, butter). */
+  /* Brand palette: navy and brass on bone paper, tomato for price tags, butter for highlights. */
   --color-cream: oklch(0.977 0.012 85);
   --color-sand: oklch(0.94 0.025 80);
   --color-kraft: oklch(0.88 0.045 75);
-  --color-ink: oklch(0.24 0.025 160);
-  --color-ink-soft: oklch(0.45 0.02 160);
-  --color-forest: oklch(0.4 0.085 158);
-  --color-forest-deep: oklch(0.3 0.06 160);
-  --color-leaf: oklch(0.93 0.04 155);
+  --color-ink: oklch(0.22 0.03 262);
+  --color-ink-soft: oklch(0.46 0.025 262);
+  --color-navy: oklch(0.3 0.065 262);
+  --color-navy-deep: oklch(0.22 0.045 262);
+  --color-mist: oklch(0.935 0.02 255);
   --color-tomato: oklch(0.55 0.17 33);
   --color-butter: oklch(0.86 0.13 88);
+  --color-brass: oklch(0.74 0.12 78);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -205,17 +210,17 @@
     animation-delay: 300ms;
   }
 
-  /* A soft emerald wash used behind hero numbers in the app. */
+  /* A soft mist-and-butter wash used behind hero numbers in the app. */
   .wash {
     background:
-      radial-gradient(120% 140% at 0% 0%, oklch(0.95 0.045 165 / 0.9), transparent 55%),
-      radial-gradient(90% 120% at 100% 100%, oklch(0.96 0.03 200 / 0.7), transparent 60%),
+      radial-gradient(120% 140% at 0% 0%, oklch(0.94 0.025 255 / 0.9), transparent 55%),
+      radial-gradient(90% 120% at 100% 100%, oklch(0.96 0.05 88 / 0.75), transparent 60%),
       var(--card);
   }
 
   /* Faint dot grid for app hero surfaces. */
   .dots {
-    background-image: radial-gradient(oklch(0.2 0.01 256 / 0.09) 1px, transparent 1px);
+    background-image: radial-gradient(oklch(0.3 0.03 70 / 0.1) 1px, transparent 1px);
     background-size: 18px 18px;
   }
 
@@ -226,18 +231,27 @@
     color-scheme: light;
   }
   .market :focus-visible {
-    outline-color: var(--color-forest);
+    outline-color: var(--color-navy);
   }
-  .market .font-display {
+  /* Fraunces, softened. Used for the wordmark, headlines and big numbers everywhere. */
+  .font-display {
     font-variation-settings:
       "SOFT" 50,
       "WONK" 0;
     letter-spacing: -0.02em;
   }
+  .wordmark {
+    font-weight: 600;
+    font-variation-settings:
+      "SOFT" 60,
+      "WONK" 0,
+      "opsz" 72;
+    letter-spacing: -0.025em;
+  }
   /* A paper card: white, hairline, soft warm shadow. */
   .paper {
     background: white;
-    border: 1px solid oklch(0.24 0.025 160 / 0.09);
+    border: 1px solid oklch(0.22 0.03 262 / 0.09);
     box-shadow:
       0 1px 2px oklch(0.3 0.04 70 / 0.06),
       0 12px 32px -12px oklch(0.3 0.04 70 / 0.18);

@@ -97,7 +97,7 @@ export default async function StockPage({ searchParams }: PageProps<"/stock">) {
           >
             <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
               <div className="max-w-xl">
-                <h2 id="draft" className="text-xl font-semibold tracking-tight">
+                <h2 id="draft" className="font-display text-2xl font-medium">
                   {toOrder.length
                     ? `We drafted ${toOrder.length} item${toOrder.length === 1 ? "" : "s"} for ${formatDate(view.deliveryDate, "long")}`
                     : `You're covered for ${formatDate(view.deliveryDate, "long")}`}

@@ -268,7 +268,7 @@ export function EngineDemo() {
             The order
           </p>
           <p className="text-ink mt-3 flex items-center gap-2 text-sm font-semibold">
-            <Store className="text-forest size-4" aria-hidden />
+            <Store className="text-navy size-4" aria-hidden />
             {scenario.buyer}
           </p>
           <ul className="mt-4 flex flex-wrap gap-2">
@@ -303,7 +303,7 @@ export function EngineDemo() {
                 className={cn(
                   "rounded-full px-4 py-1.5 text-sm font-semibold transition-all",
                   i === modeIndex
-                    ? "bg-forest text-white shadow-[0_4px_14px_-4px_oklch(0.4_0.085_158/0.6)]"
+                    ? "bg-navy text-white shadow-[0_4px_14px_-4px_oklch(0.3_0.065_262/0.55)]"
                     : "text-ink-soft hover:text-ink",
                 )}
               >
@@ -334,7 +334,7 @@ export function EngineDemo() {
                           "ml-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 align-middle text-[10px] font-bold tracking-wide uppercase",
                           mode.label === "Item prices"
                             ? "bg-butter/60 text-ink"
-                            : "bg-leaf text-forest-deep",
+                            : "bg-mist text-navy-deep",
                         )}
                       >
                         {mode.label === "Item prices" ? (
@@ -366,14 +366,14 @@ export function EngineDemo() {
                     className={cn(
                       "h-full transition-[width] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]",
                       r.itemsW,
-                      r.blocked ? "bg-kraft" : r.best ? "bg-forest" : "bg-ink-soft/50",
+                      r.blocked ? "bg-kraft" : r.best ? "bg-navy" : "bg-ink-soft/50",
                     )}
                   />
                   <div
                     className={cn(
                       "h-full transition-[width] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]",
                       r.feeW,
-                      r.best ? "bg-forest/45" : "bg-tomato",
+                      r.best ? "bg-navy/45" : "bg-tomato",
                     )}
                   />
                 </div>
@@ -383,7 +383,7 @@ export function EngineDemo() {
           </ol>
           <div
             aria-live="polite"
-            className="bg-leaf/70 text-forest-deep mt-6 rounded-2xl px-4 py-3 text-sm leading-relaxed font-semibold"
+            className="bg-mist/70 text-navy-deep mt-6 rounded-2xl px-4 py-3 text-sm leading-relaxed font-semibold"
           >
             {mode.verdict}
           </div>
