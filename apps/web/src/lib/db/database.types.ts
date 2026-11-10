@@ -230,6 +230,75 @@ export type Database = {
           },
         ];
       };
+      price_imports: {
+        Row: {
+          created_at: string;
+          document_date: string | null;
+          document_kind: string;
+          id: string;
+          org_id: string;
+          source_type: string;
+          supplier_id: string | null;
+          vendor_name: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          document_date?: string | null;
+          document_kind: string;
+          id?: string;
+          org_id: string;
+          source_type?: string;
+          supplier_id?: string | null;
+          vendor_name: string;
+        };
+        Update: {
+          created_at?: string;
+          document_date?: string | null;
+          document_kind?: string;
+          id?: string;
+          org_id?: string;
+          source_type?: string;
+          supplier_id?: string | null;
+          vendor_name?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "price_imports_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "buyer_orgs";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      price_reads: {
+        Row: {
+          created_at: string;
+          id: string;
+          org_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          id?: string;
+          org_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          org_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "price_reads_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "buyer_orgs";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       purchase_order_lines: {
         Row: {
           id: string;
@@ -516,6 +585,60 @@ export type Database = {
           },
         ];
       };
+      vendor_prices: {
+        Row: {
+          confidence: string;
+          created_at: string;
+          description: string;
+          id: string;
+          import_id: string;
+          mapping_method: string;
+          org_id: string;
+          pack_label: string;
+          pack_quantity: number;
+          pack_unit: string;
+          price_cents: number;
+          product_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          confidence: string;
+          created_at?: string;
+          description: string;
+          id?: string;
+          import_id: string;
+          mapping_method: string;
+          org_id: string;
+          pack_label: string;
+          pack_quantity: number;
+          pack_unit: string;
+          price_cents: number;
+          product_id: string;
+        };
+        Update: {
+          confidence?: string;
+          created_at?: string;
+          description?: string;
+          id?: string;
+          import_id?: string;
+          mapping_method?: string;
+          org_id?: string;
+          pack_label?: string;
+          pack_quantity?: number;
+          pack_unit?: string;
+          price_cents?: number;
+          product_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "vendor_prices_import_id_org_id_fkey";
+            columns: ["import_id", "org_id"];
+            isOneToOne: false;
+            referencedRelation: "price_imports";
+            referencedColumns: ["id", "org_id"];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -562,6 +685,17 @@ export type Database = {
       load_list_into_cart: { Args: { p_list_id: string; p_org: string }; Returns: undefined };
       mark_po_exported: { Args: { p_org: string; p_po: string }; Returns: string };
       save_cart_as_list: { Args: { p_name: string; p_org: string }; Returns: string };
+      save_price_import: {
+        Args: {
+          p_document_date: string;
+          p_document_kind: string;
+          p_lines: Json;
+          p_org: string;
+          p_supplier_id: string;
+          p_vendor_name: string;
+        };
+        Returns: string;
+      };
       set_cart_lines: {
         Args: { p_lines: Json; p_mode?: string; p_org: string };
         Returns: undefined;

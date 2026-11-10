@@ -139,6 +139,8 @@ the key, and prices a basket with it.
    | `OPTIMIZER_URL` | the optimizer's public URL, e.g. `https://supplypilot-optimizer.fly.dev` |
    | `OPTIMIZER_API_KEY` | the same secret as the optimizer |
    | `DEMO_AUTH` | `on`, but **only** for the synthetic demo (see below) |
+   | `ANTHROPIC_API_KEY` | optional, *sensitive*. Turns on "Add prices from a screenshot" (Claude reads the image). Without it the page says reading is off |
+   | `PRICE_READS_PER_HOUR` | optional cap on screenshots read per buyer org per hour (default 10) |
 
 3. Deploy, then check:
    - `curl -sI https://<your-app>/ | grep -iE "content-security|x-frame|strict-transport"`

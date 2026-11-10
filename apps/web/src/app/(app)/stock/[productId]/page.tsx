@@ -1,4 +1,4 @@
-import { ArrowLeft, Info, ShoppingCart, Trophy } from "lucide-react";
+import { ArrowLeft, ImageUp, Info, ShoppingCart, Trophy } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -9,6 +9,7 @@ import { ItemIcon, LevelSlider, SliderLegend } from "@/components/stock/level";
 import { CountEditor } from "@/components/stock/count-editor";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import type { SupplierSummary } from "@/lib/catalog/repository";
 import { getRepository } from "@/lib/catalog/seed-repository";
 import { formatDate, nextDeliveryDates } from "@/lib/delivery";
 import { FRESHNESS_LABEL } from "@/lib/freshness";
@@ -18,8 +19,27 @@ import { daysLeftText, qty, STATUS } from "@/lib/stock/format";
 import { deliveryMark, loadStock } from "@/lib/stock/load";
 import { UnitTable, unitShortLabel } from "@/lib/units";
 import { cn } from "@/lib/utils";
+import { localDay } from "@/lib/vendor-prices/parse";
+import { latestQuotes } from "@/lib/vendor-prices/quotes";
+import { DOCUMENT_KIND_LABEL } from "@/lib/vendor-prices/types";
 
 import { addSuggestedItem } from "../actions";
+
+type PriceCard = {
+  kind: "catalog" | "quote";
+  key: string;
+  name: string;
+  supplier: SupplierSummary | null;
+  serves: boolean;
+  next: string | null;
+  current: boolean;
+  unitCents: number;
+  packLabel: string;
+  packCents: number;
+  detail: string;
+  quoted?: string;
+  warning: string | null;
+};
 
 export async function generateMetadata({
   params,
@@ -87,12 +107,13 @@ export default async function StockItemPage({
   }
 
   const repo = getRepository();
-  const [view, offers, units, suppliers, source] = await Promise.all([
+  const [view, offers, units, suppliers, source, vendorPrices] = await Promise.all([
     loadStock({ ...session, state: session.state }),
     repo.listOffersForBuyer(session.buyer.id),
     repo.units(),
     repo.listSuppliers(),
     repo.source(),
+    session.state.listVendorPrices({ productId }),
   ]);
   const row = view.rows.find((r) => r.productId === productId);
   if (!row) notFound();
@@ -101,31 +122,69 @@ export default async function StockItemPage({
   const table = new UnitTable(units);
   const zone = session.buyer.locations[0]!.zone;
   const supplierById = new Map(suppliers.map((s) => [s.id, s]));
+  const nextFor = (s: SupplierSummary) =>
+    nextDeliveryDates(s.policy, zone, source.now, source.timezone, 1)[0] ?? null;
 
-  const prices = offers
+  // Catalog offers and the buyer's own quotes (from screenshots), compared per unit.
+  const catalogPrices: PriceCard[] = offers
     .filter((o) => o.product.id === row.productId)
     .map((o) => {
       const s = supplierById.get(o.supplierId)!;
       return {
-        offer: o,
+        kind: "catalog",
+        key: o.id,
+        name: s.short_name,
         supplier: s,
         serves: s.servesZone(zone),
-        next: nextDeliveryDates(s.policy, zone, source.now, source.timezone, 1)[0] ?? null,
+        next: nextFor(s),
+        current: o.freshness.ok,
         unitCents: table.unitPriceCents(
           o.priceCents,
           Number(o.pack.quantity),
           o.pack.unit,
           row.unit,
         ),
+        packLabel: o.pack.label,
+        packCents: o.priceCents,
+        detail: o.priceBasis === "contract" ? " (your contract)" : "",
+        warning: o.freshness.ok
+          ? null
+          : `${o.freshness.reasons.map((r) => FRESHNESS_LABEL[r]).join(" · ")}, so it isn't used`,
       };
-    })
-    .sort(
-      (a, b) =>
-        Number(b.serves) - Number(a.serves) ||
-        Number(b.offer.freshness.ok) - Number(a.offer.freshness.ok) ||
-        a.unitCents - b.unitCents,
-    );
-  const best = prices.find((p) => p.serves && p.offer.freshness.ok);
+    });
+  const maxQuoteDays = source.priceMaxAgeHours / 24;
+  const quotePrices: PriceCard[] = latestQuotes(
+    vendorPrices,
+    localDay(new Date()),
+    maxQuoteDays,
+  ).map((q) => {
+    const s = q.supplierId ? (supplierById.get(q.supplierId) ?? null) : null;
+    return {
+      kind: "quote",
+      key: q.id,
+      name: s?.short_name ?? q.vendorName,
+      supplier: s,
+      // A vendor that isn't in the catalog: its delivery terms aren't on file, so don't rule it out.
+      serves: s ? s.servesZone(zone) : true,
+      next: s ? nextFor(s) : null,
+      current: q.current,
+      unitCents: table.unitPriceCents(q.priceCents, Number(q.packQuantity), q.packUnit, row.unit),
+      packLabel: q.packLabel,
+      packCents: q.priceCents,
+      detail: "",
+      quoted: `Your quote · ${DOCUMENT_KIND_LABEL[q.documentKind].toLowerCase()} dated ${formatDate(q.quotedOn)}`,
+      warning: q.current
+        ? null
+        : `Quote is ${q.ageDays} days old, so check it with your rep before relying on it`,
+    };
+  });
+  const prices = [...catalogPrices, ...quotePrices].sort(
+    (a, b) =>
+      Number(b.serves) - Number(a.serves) ||
+      Number(b.current) - Number(a.current) ||
+      a.unitCents - b.unitCents,
+  );
+  const best = prices.find((p) => p.serves && p.current);
 
   return (
     <StatusProvider>
@@ -231,22 +290,30 @@ export default async function StockItemPage({
           <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
           Item price per {unitShortLabel(row.unit)}, with your contract prices applied. Delivery
           fees and minimums can still change the cheapest overall, so Price this order compares the
-          whole basket.
+          whole basket.{" "}
+          {quotePrices.length > 0
+            ? "Your quotes come from screenshots you added; Price this order doesn't use them yet."
+            : null}
         </p>
+        <Link
+          href="/suppliers/import"
+          className="text-primary mt-2 inline-flex items-center gap-1.5 text-sm font-medium hover:underline"
+        >
+          <ImageUp className="size-4" aria-hidden /> Add a vendor&apos;s prices from a screenshot
+        </Link>
         {prices.length === 0 ? (
           <p className="text-muted-foreground mt-4 text-sm">No supplier lists this item yet.</p>
         ) : (
           <ul className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {prices.map((p) => {
               const isBest = p === best;
-              const stale = !p.offer.freshness.ok;
               return (
                 <li
-                  key={p.offer.id}
+                  key={p.key}
                   className={cn(
                     "bg-card shadow-card relative rounded-2xl p-5",
                     isBest && "ring-level-ok ring-2",
-                    (!p.serves || stale) && "opacity-70",
+                    (!p.serves || !p.current) && "opacity-70",
                   )}
                 >
                   {isBest ? (
@@ -255,12 +322,23 @@ export default async function StockItemPage({
                     </span>
                   ) : null}
                   <div className="flex items-start justify-between gap-3">
-                    <Link
-                      href={`/suppliers/${p.supplier.id}`}
-                      className="font-medium underline-offset-4 hover:underline"
-                    >
-                      {p.supplier.short_name}
-                    </Link>
+                    <div className="min-w-0">
+                      {p.supplier ? (
+                        <Link
+                          href={`/suppliers/${p.supplier.id}`}
+                          className="font-medium underline-offset-4 hover:underline"
+                        >
+                          {p.name}
+                        </Link>
+                      ) : (
+                        <p className="font-medium break-words">{p.name}</p>
+                      )}
+                      {p.kind === "quote" ? (
+                        <Badge variant="accent" className="mt-1">
+                          Your quote
+                        </Badge>
+                      ) : null}
+                    </div>
                     <p className="tabular text-right">
                       <span className="text-xl font-semibold">{formatUnitPrice(p.unitCents)}</span>
                       <span className="text-muted-foreground text-xs">
@@ -269,24 +347,21 @@ export default async function StockItemPage({
                     </p>
                   </div>
                   <p className="text-muted-foreground mt-1 text-sm">
-                    {p.offer.pack.label} · {formatCents(p.offer.priceCents)} a pack
-                    {p.offer.priceBasis === "contract" ? " (your contract)" : ""}
+                    {p.packLabel} · {formatCents(p.packCents)} a pack{p.detail}
                   </p>
-                  <p className="text-muted-foreground mt-3 text-xs">
-                    {!p.serves
-                      ? "Doesn't deliver to you"
-                      : p.next
-                        ? `Next delivery ${formatDate(p.next)} · min order ${formatCents(p.supplier.policy.min_order_cents)}`
-                        : "No delivery in the next 3 weeks"}
-                  </p>
-                  {stale ? (
-                    <p className="text-warning mt-1 text-xs">
-                      {p.offer.freshness.ok
-                        ? null
-                        : p.offer.freshness.reasons.map((r) => FRESHNESS_LABEL[r]).join(" · ")}
-                      , so it isn&apos;t used
-                    </p>
+                  {p.quoted ? (
+                    <p className="text-muted-foreground mt-1 text-xs">{p.quoted}</p>
                   ) : null}
+                  <p className="text-muted-foreground mt-3 text-xs">
+                    {!p.supplier
+                      ? "Delivery terms not on file"
+                      : !p.serves
+                        ? "Doesn't deliver to you"
+                        : p.next
+                          ? `Next delivery ${formatDate(p.next)} · min order ${formatCents(p.supplier.policy.min_order_cents)}`
+                          : "No delivery in the next 3 weeks"}
+                  </p>
+                  {p.warning ? <p className="text-warning mt-1 text-xs">{p.warning}</p> : null}
                 </li>
               );
             })}

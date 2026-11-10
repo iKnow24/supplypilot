@@ -44,6 +44,10 @@ The web app calls the optimizer server-to-server at `OPTIMIZER_URL` (default
 `http://127.0.0.1:8000`). Browsing works without it; "Find My Best Price" says plainly when it
 isn't reachable.
 
+"Add prices from a screenshot" (Suppliers) reads images with Claude. Put an Anthropic API key in
+`apps/web/.env.local` as `ANTHROPIC_API_KEY=...` (server-only; `make db-env` keeps it). Without it
+the page says reading is off. Tests never call the real API.
+
 ### Local database (Milestone 2+)
 
 Carts, saved lists, favorites and supplier preferences live in Postgres (Supabase) with row level

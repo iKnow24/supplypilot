@@ -5,6 +5,10 @@ import { STATIC_SECURITY_HEADERS } from "./src/lib/security/headers";
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  experimental: {
+    // Price screenshots are posted to a server action (capped at 3.5 MB in the action itself).
+    serverActions: { bodySizeLimit: "4mb" },
+  },
   async headers() {
     // The per-request Content-Security-Policy (with its nonce) is set in src/proxy.ts.
     return [{ source: "/:path*", headers: STATIC_SECURITY_HEADERS }];
