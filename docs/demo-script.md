@@ -14,6 +14,10 @@ they never see each other's carts, lists, results or orders.
 
 1. **Home**: the demo banner, the saved "Weekly bake order", at-a-glance stats, and when each
    supplier can next deliver.
+   **Stock** (optional, 1 minute): flour "Runs out first" before Friday's delivery. Each row shows
+   on hand (last count minus what's been used since), weekly use with an 8-week trend, and the
+   amount to order. **Update count** on light brown sugar to `0` and watch it turn red.
+   **Price this order** drafts the cart for Friday. Do this before step 2, which reloads the list.
 2. **Lists → Load into cart**: 14 items, each marked "usually from Bramblewood / Meadowlark /
    Citrus Row". That habit is the baseline every saving is measured against.
 3. **Edit in the cart**: press `/` to search, type "vanilla", ↑/↓ and Enter to add. Focus jumps to

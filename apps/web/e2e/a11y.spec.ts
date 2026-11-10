@@ -55,6 +55,7 @@ test("every screen passes WCAG 2.1 AA automated checks", async ({ page, context,
   for (const [path, label] of [
     ["/", "landing"],
     ["/home", "home"],
+    ["/stock", "stock"],
     ["/lists", "saved lists"],
     ["/results", "past results"],
     ["/orders", "orders"],

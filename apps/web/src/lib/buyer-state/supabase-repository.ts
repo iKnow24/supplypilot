@@ -18,6 +18,8 @@ import {
   type OptimizationRun,
   type OptimizationRunSummary,
   type SavedList,
+  type StockCount,
+  type StockUsageWeek,
 } from "./repository";
 
 const RUN_SUMMARY_COLUMNS =
@@ -285,6 +287,57 @@ export class SupabaseBuyerStateRepository implements BuyerStateRepository {
       .order("created_at");
     if (error) fail(error, "load favorites");
     return data.map((f) => f.product_id);
+  }
+
+  async listStockCounts(): Promise<StockCount[]> {
+    const { data, error } = await this.db
+      .from("stock_counts")
+      .select("product_id, quantity, unit, counted_at")
+      .eq("org_id", this.orgId)
+      .order("counted_at", { ascending: false })
+      .order("id")
+      .limit(2000);
+    if (error) fail(error, "load your stock counts");
+    const latest = new Map<string, StockCount>();
+    for (const r of data) {
+      if (latest.has(r.product_id)) continue;
+      latest.set(r.product_id, {
+        productId: r.product_id,
+        quantity: String(r.quantity),
+        unit: r.unit,
+        countedAt: new Date(r.counted_at),
+      });
+    }
+    return [...latest.values()];
+  }
+
+  async listStockUsage(): Promise<StockUsageWeek[]> {
+    const { data, error } = await this.db
+      .from("stock_usage")
+      .select("product_id, week_start, quantity, unit")
+      .eq("org_id", this.orgId)
+      .order("week_start")
+      .limit(5000);
+    if (error) fail(error, "load your usage history");
+    return data.map((r) => ({
+      productId: r.product_id,
+      weekStart: r.week_start,
+      quantity: String(r.quantity),
+      unit: r.unit,
+    }));
+  }
+
+  async recordStockCounts(counts: { product_id: string; quantity: string; unit: string }[]) {
+    if (counts.length === 0) return;
+    const { error } = await this.db.from("stock_counts").insert(
+      counts.map((c) => ({
+        org_id: this.orgId,
+        product_id: c.product_id,
+        quantity: Number(c.quantity),
+        unit: c.unit,
+      })),
+    );
+    if (error) fail(error, "save your count");
   }
 
   async setFavorite(productId: string, favorite: boolean) {

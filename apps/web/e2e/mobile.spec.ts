@@ -22,6 +22,7 @@ test("phone: no sideways scrolling, tab bar reachable, flow works", async ({
   for (const path of [
     "/",
     "/home",
+    "/stock",
     "/lists",
     "/orders",
     "/results",

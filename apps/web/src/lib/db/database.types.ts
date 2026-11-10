@@ -444,6 +444,78 @@ export type Database = {
           },
         ];
       };
+      stock_counts: {
+        Row: {
+          counted_at: string;
+          id: string;
+          org_id: string;
+          product_id: string;
+          quantity: number;
+          unit: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          counted_at?: string;
+          id?: string;
+          org_id: string;
+          product_id: string;
+          quantity: number;
+          unit: string;
+        };
+        Update: {
+          counted_at?: string;
+          id?: string;
+          org_id?: string;
+          product_id?: string;
+          quantity?: number;
+          unit?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "stock_counts_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "buyer_orgs";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      stock_usage: {
+        Row: {
+          org_id: string;
+          product_id: string;
+          quantity: number;
+          source: string;
+          unit: string;
+          week_start: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          org_id: string;
+          product_id: string;
+          quantity: number;
+          source: string;
+          unit: string;
+          week_start: string;
+        };
+        Update: {
+          org_id?: string;
+          product_id?: string;
+          quantity?: number;
+          source?: string;
+          unit?: string;
+          week_start?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "stock_usage_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "buyer_orgs";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;

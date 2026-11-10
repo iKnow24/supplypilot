@@ -4,7 +4,7 @@
 
 ```
 apps/web/               Next.js 16 (App Router) + TypeScript + Tailwind v4 + shadcn/ui-style components
-  src/app/              Routes: / (landing, (marketing)); the app in (app): /home, /cart, /lists,
+  src/app/              Routes: / (landing, (marketing)); the app in (app): /home, /stock, /cart, /lists,
                         /results, /orders, /suppliers, /suppliers/[id], /settings
   src/lib/catalog/      CatalogRepository interface + SeedCatalogRepository (server-only)
   src/lib/              units, delivery dates, freshness policy, money formatting

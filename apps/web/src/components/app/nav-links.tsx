@@ -1,6 +1,6 @@
 "use client";
 
-import { ClipboardList, Home, Package, Settings, ShoppingCart, Truck } from "lucide-react";
+import { Boxes, ClipboardList, Home, Package, Settings, ShoppingCart, Truck } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 
 export const NAV_ITEMS = [
   { href: "/home", label: "Home", icon: Home },
+  { href: "/stock", label: "Stock", icon: Boxes },
   { href: "/cart", label: "Smart Cart", icon: ShoppingCart },
   { href: "/lists", label: "Lists", icon: ClipboardList },
   { href: "/orders", label: "Orders", icon: Package },
@@ -81,7 +82,7 @@ export function MobileTabBar() {
       aria-label="Main"
       className="bg-card/85 fixed inset-x-0 bottom-0 z-40 border-t pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden"
     >
-      <ul className="grid grid-cols-5">
+      <ul className="grid grid-cols-6">
         {NAV_ITEMS.map((item) => {
           const active = isActive(pathname, item.href);
           const Icon = item.icon;
@@ -91,7 +92,7 @@ export function MobileTabBar() {
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium",
+                  "flex flex-col items-center gap-1 py-2.5 text-[10.5px] font-medium whitespace-nowrap",
                   active ? "text-primary" : "text-muted-foreground",
                 )}
               >
