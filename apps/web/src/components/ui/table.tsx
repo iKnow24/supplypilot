@@ -20,7 +20,10 @@ function TableBody(props: React.ComponentProps<"tbody">) {
 
 function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
   return (
-    <tr className={cn("hover:bg-muted/50 border-b transition-colors", className)} {...props} />
+    <tr
+      className={cn("hover:bg-muted/60 border-border/70 border-b transition-colors", className)}
+      {...props}
+    />
   );
 }
 
@@ -28,7 +31,7 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
   return (
     <th
       className={cn(
-        "text-muted-foreground h-10 px-3 text-left align-middle text-xs font-medium tracking-wide whitespace-nowrap uppercase",
+        "text-muted-foreground h-9 px-3 text-left align-middle text-[11px] font-medium tracking-[0.06em] whitespace-nowrap uppercase",
         className,
       )}
       {...props}

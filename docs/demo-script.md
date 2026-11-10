@@ -4,14 +4,16 @@ Everything runs on synthetic data: three fictional Orlando buyers, five fictiona
 fixed demo clock of **Thursday Nov 5, 2026, 9:00 AM Orlando**, so dates and totals below are
 exact and repeatable. Start from a fresh database (`make db-reset`) and `make dev`.
 
-Switch buyers with the selector in the header. Each one is signed in as its own demo account, so
+Start on the landing page (`/`) and press **Open the live demo**; the app lives at `/home`.
+Switch buyers with the "Ordering for" selector in the sidebar (the top bar on phones). Each one is signed in as its own demo account, so
 they never see each other's carts, lists, results or orders.
 
 ---
 
 ## 1. "One list" — the buyer's habit (Sunday Crumb Bakery)
 
-1. **Home**: the demo banner, the saved "Weekly bake order", and when each supplier can next deliver.
+1. **Home**: the demo banner, the saved "Weekly bake order", at-a-glance stats, and when each
+   supplier can next deliver.
 2. **Lists → Load into cart**: 14 items, each marked "usually from Bramblewood / Meadowlark /
    Citrus Row". That habit is the baseline every saving is measured against.
 3. **Edit in the cart**: press `/` to search, type "vanilla", ↑/↓ and Enter to add. Focus jumps to

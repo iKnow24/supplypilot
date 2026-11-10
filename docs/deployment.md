@@ -1,5 +1,47 @@
 # Deploying SupplyPilot
 
+## The live demo (deployed Nov 2026)
+
+| Piece | Where |
+| --- | --- |
+| **Web app** | https://supplypilot-nu.vercel.app (Vercel project `supplypilot`, root `apps/web`) |
+| **Optimizer** | https://supplypilot-optimizer.vercel.app (Vercel project `supplypilot-optimizer`, root `services/optimizer`, native Python) |
+| **Database + Auth** | Supabase org **SupplyPilot**, project `supplypilot-demo` (`bcxvyplfqqkuqhbprfgh`, us-east-1), public sign-ups off |
+| Vercel account | `iknow24s-projects` (Hobby) |
+
+Secrets and where they live (none are in the repo):
+
+- **`OPTIMIZER_API_KEY`**: a random value set as a *sensitive* env var on both Vercel projects. It can't
+  be read back. To rotate it, set a new value on both projects, then redeploy both.
+- **Database password**: in your macOS Keychain as "SupplyPilot Supabase DB" (account
+  `supplypilot-demo`); `security find-generic-password -a supplypilot-demo -s "SupplyPilot Supabase DB" -w`.
+  It can also be reset in the Supabase dashboard.
+- The web app uses only the **publishable** Supabase key. The secret key is not set anywhere.
+
+Day-to-day (from the repo root; the repo is linked with `supabase link`):
+
+```bash
+vercel deploy --prod --project supplypilot --scope iknow24s-projects            # web
+vercel deploy --prod --project supplypilot-optimizer --scope iknow24s-projects  # optimizer
+apps/web/node_modules/.bin/supabase --workdir . db push --remote                # new migrations
+REMOTE=1 sh supabase/check-security.sh                                          # DB security invariants
+apps/web/node_modules/.bin/supabase --workdir . db reset --remote               # wipe + reseed the demo
+cd apps/web && E2E_BASE_URL=https://supplypilot-nu.vercel.app npx playwright test   # full e2e on prod
+```
+
+The e2e suite passes against production (all 18 tests). It writes results and POs into the shared demo
+data, so reset the demo afterwards. Deploys are made from the CLI. The projects aren't connected to
+GitHub yet, so pushing to `main` doesn't redeploy. Connect them in each project's Settings → Git when
+you want that.
+
+**Optimizer on Vercel:** `services/optimizer/main.py` re-exports the FastAPI app for Vercel's Python
+runtime (`[tool.vercel] entrypoint = "main:app"`), and `vercel_build.py` copies the repo-level catalog
+next to the service at build time. The Dockerfile below is still the option for any other host.
+
+---
+
+## Deploying from scratch
+
 Three pieces, each on a host made for it:
 
 | Piece | Where | Why |

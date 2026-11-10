@@ -8,7 +8,7 @@ import {
   duplicateSavedList,
   loadSavedListAndOpen,
   renameSavedList,
-} from "@/app/cart/actions";
+} from "@/app/(app)/cart/actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
