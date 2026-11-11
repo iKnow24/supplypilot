@@ -15,6 +15,9 @@ export default defineConfig({
   test: {
     include: ["src/**/*.db.test.ts"],
     environment: "node",
+    // One database, shared demo orgs (and "Reset demo" wipes one): files run one at a time, like
+    // the e2e tests, so one file's reset can't race another file's counts.
+    fileParallelism: false,
     env: loadEnv("development", import.meta.dirname, ""),
   },
 });

@@ -20,7 +20,10 @@ delivery date, supplier preferences), the CP-SAT optimizer (`POST /v1/optimize`)
 recommendations UI ("Find My Best Price", results, alternatives, history), and purchase orders
 (approve, draft POs per supplier, CSV/PDF export, reorder). M6 added the accessibility,
 security and deployment pass. **Stock** (`/stock`) shows what's on hand, the weekly burn rate,
-and a suggested order for a chosen delivery, which goes straight into the Smart Cart. See [`docs/implementation-checklist.md`](docs/implementation-checklist.md),
+and a suggested order for a chosen delivery, which goes straight into the Smart Cart. A new store
+**sets itself up from its own documents** (`/setup`): its inventory count, recent invoices, price
+sheets and vendor texts become its items, vendors, dated prices, weekly use and usual order, after
+one review screen. See [`docs/implementation-checklist.md`](docs/implementation-checklist.md),
 the [demo script](docs/demo-script.md) and [how to deploy](docs/deployment.md).
 
 ## Run it locally
@@ -44,10 +47,10 @@ The web app calls the optimizer server-to-server at `OPTIMIZER_URL` (default
 `http://127.0.0.1:8000`). Browsing works without it; "Find My Best Price" says plainly when it
 isn't reachable.
 
-"Add prices from a screenshot" (Suppliers) reads images with Claude, and Autopilot (Home) uses
-Claude to plan the next order. Put an Anthropic API key in
+"Add prices from a screenshot" (Suppliers) and "Set up from your documents" (`/setup`) read
+images, PDFs and spreadsheets with Claude, and Autopilot (Home) uses Claude to plan the next order. Put an Anthropic API key in
 `apps/web/.env.local` as `ANTHROPIC_API_KEY=...` (server-only; `make db-env` keeps it). Without it
-screenshot reading is off and Autopilot runs its fixed steps. Tests never call the real API.
+document reading is off and Autopilot runs its fixed steps. Tests never call the real API.
 
 ### Local database (Milestone 2+)
 

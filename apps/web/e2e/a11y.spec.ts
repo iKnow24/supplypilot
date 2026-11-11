@@ -62,6 +62,7 @@ test("every screen passes WCAG 2.1 AA automated checks", async ({ page, context,
     ["/suppliers", "suppliers"],
     ["/suppliers/sup_meadowlark", "supplier detail"],
     ["/settings", "settings"],
+    ["/setup", "set up from your documents"],
     ["/does-not-exist", "not found"],
   ] as const) {
     await page.goto(path, { waitUntil: "networkidle" });

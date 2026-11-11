@@ -26,7 +26,7 @@ export function PageHeader({
           <p className="text-muted-foreground mt-2 max-w-2xl text-[15px]">{description}</p>
         ) : null}
       </div>
-      {actions ? <div className="flex gap-2">{actions}</div> : null}
+      {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
     </div>
   );
 }

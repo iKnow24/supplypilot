@@ -243,6 +243,7 @@ describe("which quotes to show", () => {
     documentKind: "price_list",
     documentDate: null,
     importedAt: new Date("2026-11-09T15:00:00Z"),
+    packs: null,
     ...over,
   });
 

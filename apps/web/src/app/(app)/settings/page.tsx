@@ -1,4 +1,6 @@
+import { FileUp } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { BuyerSwitcher } from "@/components/app/buyer-switcher";
 import { PageHeader } from "@/components/app/page-header";
@@ -6,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { getRepository } from "@/lib/catalog/seed-repository";
 import { PersistenceNotice } from "@/components/app/persistence-notice";
 import { ResetDemo } from "@/components/app/reset-demo";
+import { Button } from "@/components/ui/button";
 import { getSession } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Settings" };
@@ -71,6 +74,22 @@ export default async function SettingsPage({ searchParams }: PageProps<"/setting
           </CardContent>
         </Card>
       ) : null}
+      <Card>
+        <CardHeader>
+          <CardTitle>Your store&apos;s documents</CardTitle>
+          <CardDescription>
+            Set your store up from your inventory count, recent invoices and vendor price sheets.
+            Doing it again replaces what the last setup learned.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button asChild variant="outline">
+            <Link href="/setup">
+              <FileUp aria-hidden /> Set up from your documents
+            </Link>
+          </Button>
+        </CardContent>
+      </Card>
       <Card>
         <CardHeader>
           <CardTitle>About this data</CardTitle>

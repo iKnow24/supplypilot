@@ -93,6 +93,8 @@ export interface PriceImportInput {
 
 export interface PriceImportSummary {
   id: string;
+  /** 'screenshot': added on its own; 'document': learned during store setup. */
+  sourceType: "screenshot" | "document";
   vendorName: string;
   supplierId: string | null;
   documentKind: DocumentKind;
@@ -118,4 +120,6 @@ export interface VendorPrice {
   documentKind: DocumentKind;
   documentDate: string | null;
   importedAt: Date;
+  /** On an invoice line: packs bought (decimal string). Null otherwise. */
+  packs: string | null;
 }

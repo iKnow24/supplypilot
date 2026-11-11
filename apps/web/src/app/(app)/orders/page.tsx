@@ -1,4 +1,4 @@
-import { Package } from "lucide-react";
+import { FileText, Package } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -16,15 +16,30 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { getRepository } from "@/lib/catalog/seed-repository";
 import { formatDate } from "@/lib/delivery";
 import { formatCents } from "@/lib/money";
 import { getSession } from "@/lib/session";
+import { unitShortLabel } from "@/lib/units";
+import type { VendorPrice } from "@/lib/vendor-prices/types";
 
 export const metadata: Metadata = { title: "Past orders" };
 
 export default async function OrdersPage() {
   const { persistence, state } = await getSession();
-  const orders = state ? await state.listPurchaseOrders({ limit: 100 }) : [];
+  const [orders, imports, prices, products] = await Promise.all([
+    state ? state.listPurchaseOrders({ limit: 100 }) : [],
+    state ? state.listPriceImports(200) : [],
+    state ? state.listVendorPrices() : [],
+    getRepository().listProducts(),
+  ]);
+  // Before SupplyPilot: the invoices the store uploaded when it set up.
+  const invoices = imports
+    .filter((i) => i.documentKind === "invoice")
+    .sort((a, b) => (b.documentDate ?? "").localeCompare(a.documentDate ?? ""));
+  const linesOf = new Map<string, VendorPrice[]>();
+  for (const p of prices) linesOf.set(p.importId, [...(linesOf.get(p.importId) ?? []), p]);
+  const productName = new Map(products.map((p) => [p.id, p.name]));
 
   return (
     <div>
@@ -91,6 +106,74 @@ export default async function OrdersPage() {
           </CardContent>
         </Card>
       )}
+
+      {invoices.length ? (
+        <section aria-labelledby="invoices" className="mt-10">
+          <h2 id="invoices" className="text-lg font-semibold tracking-tight">
+            From your invoices
+          </h2>
+          <p className="text-muted-foreground mt-1 text-sm">
+            What you bought before SupplyPilot, read from the invoices you uploaded. Weekly use and
+            your usual order were worked out from these.
+          </p>
+          <ul className="mt-4 space-y-3">
+            {invoices.map((inv) => {
+              const lines = linesOf.get(inv.id) ?? [];
+              const total = lines.reduce(
+                (sum, l) => sum + (l.packs ? Math.round(Number(l.packs) * l.priceCents) : 0),
+                0,
+              );
+              return (
+                <li key={inv.id} className="bg-card shadow-card rounded-2xl">
+                  <details>
+                    <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-3 p-4 sm:px-5">
+                      <span className="flex min-w-0 items-center gap-3">
+                        <FileText className="text-muted-foreground size-4 shrink-0" aria-hidden />
+                        <span className="min-w-0">
+                          <span className="block font-medium">
+                            {inv.vendorName.replace(" (Demo)", "")}
+                          </span>
+                          <span className="text-muted-foreground text-xs">
+                            Invoice
+                            {inv.documentDate
+                              ? ` · ${formatDate(inv.documentDate, "long")}`
+                              : ""} · {lines.length} {lines.length === 1 ? "item" : "items"}
+                          </span>
+                        </span>
+                      </span>
+                      <span className="tabular font-medium">
+                        {total ? formatCents(total) : "—"}
+                      </span>
+                    </summary>
+                    <ul className="divide-y border-t px-4 text-sm sm:px-5">
+                      {lines.map((l) => (
+                        <li key={l.id} className="flex items-center justify-between gap-3 py-2">
+                          <span className="min-w-0">
+                            <span className="block truncate">
+                              {productName.get(l.productId) ?? l.productId}
+                            </span>
+                            <span className="text-muted-foreground text-xs">
+                              {l.packs ? `${l.packs} × ` : ""}
+                              {l.packLabel ||
+                                `${l.packQuantity} ${unitShortLabel(l.packUnit)}`} at{" "}
+                              {formatCents(l.priceCents)}
+                            </span>
+                          </span>
+                          <span className="tabular">
+                            {l.packs
+                              ? formatCents(Math.round(Number(l.packs) * l.priceCents))
+                              : "—"}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ) : null}
     </div>
   );
 }

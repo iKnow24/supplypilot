@@ -15,6 +15,7 @@ import { Autopilot } from "@/components/autopilot/autopilot";
 import { StatusProvider } from "@/components/cart/status";
 import { ItemIcon, SliderLegend } from "@/components/stock/level";
 import { PantryTile } from "@/components/stock/pantry";
+import { SetupDone, SetupPrompt } from "@/components/store-setup/setup-prompt";
 import { Button } from "@/components/ui/button";
 import { AUTOPILOT_MANUAL_COOKIE, untouchedSinceLastPricing } from "@/lib/autopilot/autostart";
 import { currentAutopilotPlan } from "@/lib/autopilot/plan";
@@ -32,7 +33,7 @@ export const metadata: Metadata = { title: "Home" };
  * The calm dashboard: what needs you, the order we drafted, and the pantry at a glance.
  * Everything else lives one tap away in the sidebar.
  */
-export default async function HomePage() {
+export default async function HomePage({ searchParams }: PageProps<"/home">) {
   const repo = getRepository();
   const session = await getSession();
   const { buyer, persistence, state } = session;
@@ -53,14 +54,31 @@ export default async function HomePage() {
     );
   }
 
-  const [stock, runs, orders, lastRun, cart, jar] = await Promise.all([
+  const [stock, runs, orders, lastRun, cart, jar, storeItems, { setup }] = await Promise.all([
     loadStock({ ...session, state }),
     state.listRuns(20),
     state.listPurchaseOrders({ limit: 1 }),
     state.latestAutopilotRun(),
     state.getCart(),
     cookies(),
+    state.listStoreItems(),
+    searchParams,
   ]);
+
+  // A store with nothing tracked yet starts from the documents it already has.
+  if (stock.rows.length === 0) {
+    return (
+      <div className="space-y-8">
+        <header className="animate-fade-up">
+          <p className="text-muted-foreground text-sm">{buyer.name}</p>
+          <h1 className="font-display mt-1 text-3xl leading-[1.1] font-medium sm:text-[40px]">
+            {hello}. <span className="text-muted-foreground">Let&apos;s set up your store.</span>
+          </h1>
+        </header>
+        <SetupPrompt />
+      </div>
+    );
+  }
   const short = stock.rows.filter((r) => r.status === "short");
   const toOrder = stock.rows.filter((r) => r.suggested > 0);
   const urgent = stock.rows.filter((r) => r.status !== "unknown").slice(0, 6);
@@ -83,6 +101,12 @@ export default async function HomePage() {
   return (
     <StatusProvider>
       <div className="space-y-10">
+        {setup === "done" && storeItems.length ? (
+          <SetupDone
+            matched={storeItems.filter((i) => i.productId).length}
+            unmatched={storeItems.filter((i) => !i.productId).length}
+          />
+        ) : null}
         <header className="animate-fade-up">
           <p className="text-muted-foreground text-sm">{buyer.name}</p>
           <h1

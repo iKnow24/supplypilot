@@ -9,6 +9,7 @@ import type {
   PurchaseOrderLineDraft,
   PurchaseOrderSummary,
 } from "../orders/types";
+import type { StoreItem, StoreSetupInput } from "../store-setup/types";
 import type { DbClient } from "../supabase/server";
 import {
   DOCUMENT_KINDS,
@@ -542,7 +543,7 @@ export class SupabaseBuyerStateRepository implements BuyerStateRepository {
     const { data, error } = await this.db
       .from("price_imports")
       .select(
-        "id, vendor_name, supplier_id, document_kind, document_date, created_at, vendor_prices(count)",
+        "id, source_type, vendor_name, supplier_id, document_kind, document_date, created_at, vendor_prices(count)",
       )
       .eq("org_id", this.orgId)
       .order("created_at", { ascending: false })
@@ -550,6 +551,7 @@ export class SupabaseBuyerStateRepository implements BuyerStateRepository {
     if (error) fail(error, "load your vendor prices");
     return data.map((r) => ({
       id: r.id,
+      sourceType: r.source_type === "document" ? ("document" as const) : ("screenshot" as const),
       vendorName: r.vendor_name,
       supplierId: r.supplier_id,
       documentKind: toKind(r.document_kind),
@@ -563,7 +565,7 @@ export class SupabaseBuyerStateRepository implements BuyerStateRepository {
     let q = this.db
       .from("vendor_prices")
       .select(
-        "id, import_id, product_id, description, pack_quantity, pack_unit, pack_label, price_cents, confidence, mapping_method, price_imports!inner(vendor_name, supplier_id, document_kind, document_date, created_at)",
+        "id, import_id, product_id, description, pack_quantity, pack_unit, pack_label, price_cents, confidence, mapping_method, packs, price_imports!inner(vendor_name, supplier_id, document_kind, document_date, created_at)",
       )
       .eq("org_id", this.orgId);
     if (filter.productId) q = q.eq("product_id", filter.productId);
@@ -587,6 +589,7 @@ export class SupabaseBuyerStateRepository implements BuyerStateRepository {
         documentKind: toKind(r.price_imports.document_kind),
         documentDate: r.price_imports.document_date,
         importedAt: new Date(r.price_imports.created_at),
+        packs: r.packs === null ? null : String(r.packs),
       }))
       .sort((a, b) => b.importedAt.getTime() - a.importedAt.getTime());
   }
@@ -614,6 +617,33 @@ export class SupabaseBuyerStateRepository implements BuyerStateRepository {
       .gte("created_at", since);
     if (countError) fail(countError, "start reading the image");
     return count ?? 0;
+  }
+
+  async saveStoreSetup(input: StoreSetupInput) {
+    const { data, error } = await this.db.rpc("save_store_setup", {
+      p_org: this.orgId,
+      p_setup: input as unknown as Json,
+    });
+    if (error) fail(error, "set up your store");
+    return data ?? null;
+  }
+
+  async listStoreItems(): Promise<StoreItem[]> {
+    const { data, error } = await this.db
+      .from("store_items")
+      .select("id, name, product_id, vendor_name, note, created_at")
+      .eq("org_id", this.orgId)
+      .order("created_at")
+      .limit(1000);
+    if (error) fail(error, "load your items");
+    return data.map((r) => ({
+      id: r.id,
+      name: r.name,
+      productId: r.product_id,
+      vendorName: r.vendor_name,
+      note: r.note,
+      createdAt: new Date(r.created_at),
+    }));
   }
 
   async startAutopilotRun(usedAi: boolean) {

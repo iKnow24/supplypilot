@@ -4214,6 +4214,23 @@
           ]
         }
       ]
+    },
+    {
+      "id": "org_orangeblossom",
+      "name": "Orange Blossom Bakehouse (Demo)",
+      "kind": "bakery",
+      "synthetic": true,
+      "locations": [
+        {
+          "id": "loc_orangeblossom_dt",
+          "name": "Thornton Park shop",
+          "zone": "ORL-DT",
+          "address_label": "Fictional address, Downtown Orlando zone"
+        }
+      ],
+      "approved_equivalences": [],
+      "contract_prices": [],
+      "saved_lists": []
     }
   ],
   "scenarios": [

@@ -1,6 +1,6 @@
 # Demo script (about 10 minutes)
 
-Everything runs on synthetic data: three fictional Orlando buyers, five fictional suppliers, and a
+Everything runs on synthetic data: four fictional Orlando buyers (one brand new), five fictional suppliers, and a
 fixed demo clock of **Thursday Nov 5, 2026, 9:00 AM Orlando**, so dates and totals below are
 exact and repeatable. Start from a fresh database (`make db-reset`) and `make dev`.
 
@@ -37,6 +37,22 @@ they never see each other's carts, lists, results or orders.
    shows each step.
 4. **Approve and create 1 draft PO**: the only step that creates anything, and nothing is sent.
    No key on the server? The same steps run without AI, and the card says so.
+
+## 1c. A new bakery sets itself up from its paperwork (Orange Blossom Bakehouse, about 2 minutes)
+
+1. Switch to **Orange Blossom Bakehouse**, which has nothing set up yet. **Home** says "Let's set
+   up your store". Press **Set up from your documents**.
+2. Drop the five files in `apps/web/e2e/fixtures/setup/`: an inventory count (CSV), two
+   Bramblewood invoices (a PDF and a photo), a Meadowlark invoice (PDF) and a text from a local
+   farm. **Read 5 documents**: each file is read on its own, then the review opens.
+3. **Your items**: 11 matched to the catalog, with on hand from the count (3 × 50 lb bags = 150 lb)
+   and weekly use from the invoices (600 lb over 2 weeks = 300 lb). The dairy items are marked:
+   one week of invoices assumes a weekly order. **Not matched yet**: pick **Kosher salt** for the
+   salt and type a weekly use of 3; the lavender stays unmatched and is kept as a note.
+4. **Vendors and prices** and **Past orders** show what each document said. **Save and set up my
+   store**: Home confirms it, and Autopilot plans and prices the first order by itself. Stock,
+   Lists ("Usual order"), Past orders ("From your invoices") and Vendors ("Your vendors") now show
+   the bakery's own data. Reset the database (or use **Reset demo** once it lands) to run it again.
 
 ## 2. Honest results, even when the order can't be filled exactly
 

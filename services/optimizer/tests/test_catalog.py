@@ -15,7 +15,7 @@ def raw() -> dict:
 def test_seed_catalog_is_valid() -> None:
     c = load_catalog()
     assert 3 <= len(c.suppliers) <= 5
-    assert 2 <= len(c.buyers) <= 3
+    assert 3 <= len(c.buyers) <= 4
     assert 30 <= len(c.products) <= 60
     assert len(c.scenarios) == 8
 

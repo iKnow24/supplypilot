@@ -36,7 +36,8 @@ Rules:
 - document_date is the date printed on the document or message, as YYYY-MM-DD. Don't use today's date unless it is printed.
 - confidence is "high" only when the item, pack size and price are all clearly legible and the product match is certain.`;
 
-function catalogBlock(products: Product[], units: Unit[]): string {
+/** The catalog as a compact table for the AI to match against (also used by store setup). */
+export function catalogBlock(products: Product[], units: Unit[]): string {
   const base = new Map(units.map((u) => [u.base_unit, u.dimension]));
   const rows = products.map(
     (p) => `${p.id} | ${p.name} | ${p.spec} | by ${base.get(p.base_unit) ?? p.base_unit}`,
