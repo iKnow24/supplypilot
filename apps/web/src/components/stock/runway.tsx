@@ -1,3 +1,7 @@
+"use client";
+
+// Drawn in the browser on purpose: if a streamed chunk boundary fell inside a server-rendered
+// <svg>, React would wrap the late part in <svg style="display:none">, which the CSP blocks.
 import Link from "next/link";
 
 import { daysLeftText } from "@/lib/stock/format";

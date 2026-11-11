@@ -1,3 +1,7 @@
+"use client";
+
+// Drawn in the browser on purpose: if a streamed chunk boundary fell inside a server-rendered
+// <svg>, React would wrap the late part in <svg style="display:none">, which the CSP blocks.
 /**
  * The item icon (in a status-tinted square) and the level slider: how many days the stock
  * lasts across a two-week track, with a tick on the delivery day. Pure SVG attributes and
