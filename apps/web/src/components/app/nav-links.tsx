@@ -1,10 +1,9 @@
 "use client";
 
 import { Boxes, Home, Package } from "lucide-react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { cn } from "@/lib/utils";
+import { SlidingTabs } from "./sliding-tabs";
 
 /**
  * Three places, nothing else: what's happening (Home), what you have (Stock), and everything
@@ -36,33 +35,20 @@ export function isActive(pathname: string, href: string) {
 const inSection = (pathname: string, match: readonly string[]) =>
   match.some((m) => isActive(pathname, m));
 
-/** Tablet and up: the links in the top bar. */
-export function TopNav() {
+/** Tablet and up: the links in the middle of the floating bar. */
+export function TopNav({ className }: { className?: string }) {
   const pathname = usePathname();
   return (
-    <nav aria-label="Main" className="hidden md:block">
-      <ul className="flex items-center gap-1">
-        {NAV_ITEMS.map((item) => {
-          const active = inSection(pathname, item.match);
-          return (
-            <li key={item.href}>
-              <Link
-                href={item.href}
-                aria-current={active ? "page" : undefined}
-                className={cn(
-                  "relative rounded-lg px-3.5 py-2 text-sm font-medium transition-colors",
-                  active
-                    ? "text-foreground after:bg-primary after:absolute after:inset-x-3.5 after:-bottom-[13px] after:h-0.5 after:rounded-full"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
-                )}
-              >
-                {item.label}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
+    <SlidingTabs
+      label="Main"
+      look="bar"
+      className={className}
+      items={NAV_ITEMS.map((i) => ({
+        href: i.href,
+        label: i.label,
+        active: inSection(pathname, i.match),
+      }))}
+    />
   );
 }
 
@@ -71,61 +57,35 @@ export function OrderTabs() {
   const pathname = usePathname();
   if (!ORDER_TABS.some((t) => inSection(pathname, t.match))) return null;
   return (
-    <nav aria-label="Orders" className="-mx-1 mb-8 overflow-x-auto px-1">
-      <ul className="bg-muted inline-flex rounded-xl p-1">
-        {ORDER_TABS.map((t) => {
-          const active = inSection(pathname, t.match);
-          return (
-            <li key={t.href}>
-              <Link
-                href={t.href}
-                aria-current={active ? "page" : undefined}
-                className={cn(
-                  "block rounded-lg px-3.5 py-1.5 text-sm font-medium whitespace-nowrap transition-colors",
-                  active
-                    ? "bg-card text-foreground shadow-card"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {t.label}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
+    <SlidingTabs
+      label="Orders"
+      look="segmented"
+      className="-mx-1 mb-8 overflow-x-auto px-1"
+      items={ORDER_TABS.map((t) => ({
+        href: t.href,
+        label: t.label,
+        active: inSection(pathname, t.match),
+      }))}
+    />
   );
 }
 
-/** Phones: a bottom tab bar with the same three places. */
+/** Phones: the same three places in a floating dock at the bottom. */
 export function MobileTabBar() {
   const pathname = usePathname();
   return (
-    <nav
-      aria-label="Main"
-      className="bg-card/85 fixed inset-x-0 bottom-0 z-40 border-t pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden"
-    >
-      <ul className="grid grid-cols-3">
-        {NAV_ITEMS.map((item) => {
-          const active = inSection(pathname, item.match);
-          const Icon = item.icon;
-          return (
-            <li key={item.href}>
-              <Link
-                href={item.href}
-                aria-current={active ? "page" : undefined}
-                className={cn(
-                  "flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium",
-                  active ? "text-primary" : "text-muted-foreground",
-                )}
-              >
-                <Icon className="size-5" aria-hidden />
-                {item.label}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
+    <div className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-40 md:hidden">
+      <SlidingTabs
+        label="Main"
+        look="dock"
+        className="glass-bar rounded-[1.4rem]"
+        items={NAV_ITEMS.map((i) => ({
+          href: i.href,
+          label: i.label,
+          icon: i.icon,
+          active: inSection(pathname, i.match),
+        }))}
+      />
+    </div>
   );
 }
