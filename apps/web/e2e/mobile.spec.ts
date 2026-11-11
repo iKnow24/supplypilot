@@ -29,6 +29,7 @@ test("phone: no sideways scrolling, tab bar reachable, flow works", async ({
     "/suppliers",
     "/suppliers/sup_kestrel",
     "/settings",
+    "/setup",
   ]) {
     await page.goto(path, { waitUntil: "networkidle" });
     await noSideways(page, path);

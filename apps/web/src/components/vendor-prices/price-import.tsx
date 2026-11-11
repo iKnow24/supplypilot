@@ -31,7 +31,7 @@ type SupplierOption = { id: string; name: string; short_name: string };
 const OTHER = "__other";
 
 /** Photos from a phone are huge: scale them down in the browser before upload. */
-async function prepareImage(file: File): Promise<File> {
+export async function prepareImage(file: File): Promise<File> {
   let bitmap: ImageBitmap;
   try {
     bitmap = await createImageBitmap(file);

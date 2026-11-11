@@ -5,7 +5,8 @@ Seeds, for each fictional demo buyer in the catalog:
   * a buyer_orgs row,
   * one demo Supabase Auth user (email demo.<slug>@supplypilot.test) and its membership,
   * the buyer's saved lists, with the same ids the catalog and optimizer scenarios use,
-  * demo stock for the items on their weekly list: 8 weeks of usage and one shelf count,
+  * demo stock for the items on their weekly list: 8 weeks of usage and one shelf count (a buyer
+    with no lists, like the brand-new bakery, starts empty),
   * the starting state "Reset demo" restores (public.demo_seed).
 
 The demo password is a LOCAL TEST VALUE for fictional users, not a secret. Never run this seed
@@ -141,7 +142,10 @@ def main() -> None:
                 + ",\n".join(rows)
                 + ";"
             )
-        starting_counts, sql = stock_sql(org, buyer["saved_lists"][0]["lines"], catalog)
+        # A brand-new buyer (no lists) starts with no stock at all.
+        starting_counts, sql = (
+            stock_sql(org, buyer["saved_lists"][0]["lines"], catalog) if buyer["saved_lists"] else ([], [])
+        )
         out += sql
         # What "Reset demo" restores (supabase/migrations/20261113000000_demo_reset.sql).
         seed = {

@@ -11,6 +11,7 @@ import { SliderLegend } from "@/components/stock/level";
 import { Pantry } from "@/components/stock/pantry";
 import { Runway } from "@/components/stock/runway";
 import { StockList } from "@/components/stock/stock-list";
+import { UnmatchedItems } from "@/components/store-setup/setup-prompt";
 import { Button } from "@/components/ui/button";
 import { formatDate, localParts } from "@/lib/delivery";
 import { getSession } from "@/lib/session";
@@ -47,10 +48,11 @@ export default async function StockPage({ searchParams }: PageProps<"/stock">) {
   }
 
   const mode: ViewId = VIEWS.some((v) => v.id === viewParam) ? (viewParam as ViewId) : "pantry";
-  const view = await loadStock(
-    { ...session, state: session.state },
-    typeof wanted === "string" ? wanted : null,
-  );
+  const [view, storeItems] = await Promise.all([
+    loadStock({ ...session, state: session.state }, typeof wanted === "string" ? wanted : null),
+    session.state.listStoreItems(),
+  ]);
+  const fromDocuments = storeItems.length > 0;
   const today = localParts(view.now, view.timeZone).date;
   const short = view.rows.filter((r) => r.status === "short");
   const toOrder = view.rows.filter((r) => r.suggested > 0);
@@ -84,9 +86,19 @@ export default async function StockPage({ searchParams }: PageProps<"/stock">) {
       ) : null}
 
       {view.rows.length === 0 || !view.deliveryDate ? (
-        <EmptyState icon={Boxes} title="Nothing tracked yet">
+        <EmptyState
+          icon={Boxes}
+          title="Nothing tracked yet"
+          action={
+            view.deliveryDate ? (
+              <Button asChild>
+                <Link href="/setup">Set up from your documents</Link>
+              </Button>
+            ) : null
+          }
+        >
           {view.deliveryDate
-            ? "Once you count your shelves and have a few weeks of usage, every item shows up here."
+            ? "Upload your inventory count and a few recent invoices, and every item shows up here with how fast you use it."
             : "No supplier can deliver to you in the next two weeks, so there's nothing to plan for."}
         </EmptyState>
       ) : (
@@ -179,10 +191,21 @@ export default async function StockPage({ searchParams }: PageProps<"/stock">) {
             ) : null}
 
             <p className="text-muted-foreground mt-4 text-xs">
-              Demo data: usage is a fictional estimate. In a real store it would come from your
-              register sales and recipes, or from the change between counts.
+              {fromDocuments ? (
+                <>
+                  Weekly use was estimated from your invoices when you{" "}
+                  <Link href="/setup" className="underline underline-offset-2">
+                    set up from your documents
+                  </Link>
+                  . It gets sharper as you count.
+                </>
+              ) : (
+                "Demo data: usage is a fictional estimate. In a real store it would come from your register sales and recipes, or from the change between counts."
+              )}
             </p>
           </section>
+
+          <UnmatchedItems items={storeItems} />
         </div>
       )}
     </StatusProvider>

@@ -667,6 +667,48 @@ export type Database = {
           },
         ];
       };
+      store_items: {
+        Row: {
+          created_at: string;
+          id: string;
+          name: string;
+          note: string | null;
+          org_id: string;
+          product_id: string | null;
+          source: string;
+          vendor_name: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          id?: string;
+          name: string;
+          note?: string | null;
+          org_id: string;
+          product_id?: string | null;
+          source?: string;
+          vendor_name?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          name?: string;
+          note?: string | null;
+          org_id?: string;
+          product_id?: string | null;
+          source?: string;
+          vendor_name?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "store_items_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "buyer_orgs";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       vendor_prices: {
         Row: {
           confidence: string;
@@ -679,6 +721,7 @@ export type Database = {
           pack_label: string;
           pack_quantity: number;
           pack_unit: string;
+          packs: number | null;
           price_cents: number;
           product_id: string;
         };
@@ -694,6 +737,7 @@ export type Database = {
           pack_label: string;
           pack_quantity: number;
           pack_unit: string;
+          packs?: number | null;
           price_cents: number;
           product_id: string;
         };
@@ -708,6 +752,7 @@ export type Database = {
           pack_label?: string;
           pack_quantity?: number;
           pack_unit?: string;
+          packs?: number | null;
           price_cents?: number;
           product_id?: string;
         };
@@ -779,6 +824,7 @@ export type Database = {
         };
         Returns: string;
       };
+      save_store_setup: { Args: { p_org: string; p_setup: Json }; Returns: string };
       set_cart_lines: {
         Args: { p_lines: Json; p_mode?: string; p_org: string };
         Returns: undefined;

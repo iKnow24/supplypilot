@@ -9,6 +9,7 @@
  */
 import type { OptimizeRequest, OptimizeResponse } from "../optimizer/types";
 import type { PurchaseOrder, PurchaseOrderDraft, PurchaseOrderSummary } from "../orders/types";
+import type { StoreItem, StoreSetupInput } from "../store-setup/types";
 import type { PriceImportInput, PriceImportSummary, VendorPrice } from "../vendor-prices/types";
 
 export interface CartLine {
@@ -134,6 +135,14 @@ export interface BuyerStateRepository {
   deletePriceImport(id: string): Promise<boolean>;
   /** Logs one image sent to the AI, and returns how many were sent in the last hour. */
   logPriceRead(): Promise<number>;
+
+  /**
+   * Saves a reviewed store setup in one transaction, replacing what the last setup learned
+   * (items, document imports, usage estimates, the usual order list). Returns the list's id.
+   */
+  saveStoreSetup(input: StoreSetupInput): Promise<string | null>;
+  /** The store's own items, matched or not. */
+  listStoreItems(): Promise<StoreItem[]>;
 
   /** Records the start of an Autopilot run. Returns its id. */
   startAutopilotRun(usedAi: boolean): Promise<string>;

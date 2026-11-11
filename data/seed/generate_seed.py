@@ -565,6 +565,20 @@ BUYERS = [
             }
         ],
     },
+    {
+        # A bakery that has only just signed up: no lists, no stock, no prices. It sets itself
+        # up from its own documents (the web app's /setup page), so the demo starts blank.
+        "id": "org_orangeblossom",
+        "name": "Orange Blossom Bakehouse (Demo)",
+        "kind": "bakery",
+        "locations": [
+            {"id": "loc_orangeblossom_dt", "name": "Thornton Park shop", "zone": "ORL-DT",
+             "address_label": "Fictional address, Downtown Orlando zone"},
+        ],
+        "contract_prices": [],
+        "approved_equivalences": [],
+        "saved_lists": [],
+    },
 ]
 
 # Explicit equivalence rules. A substitution is only ever considered when a rule

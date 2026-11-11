@@ -58,6 +58,7 @@ export default defineConfig({
             ANTHROPIC_BASE_URL: `http://127.0.0.1:${MOCK_AI_PORT}`,
             ANTHROPIC_API_KEY: "test-key-for-the-mock",
             PRICE_READS_PER_HOUR: "1000",
+            SETUP_READS_PER_HOUR: "1000",
             AUTOPILOT_AI_RUNS_PER_HOUR: "1000",
           },
         },
